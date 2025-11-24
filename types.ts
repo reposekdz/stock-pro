@@ -1,4 +1,5 @@
 
+
 export interface User {
   id: string;
   username: string;
@@ -18,6 +19,8 @@ export interface Comment {
   user: User;
   text: string;
   timestamp: string;
+  likes: number;     // Added likes count
+  liked: boolean;    // Added liked state
 }
 
 export interface ImageEditSettings {
