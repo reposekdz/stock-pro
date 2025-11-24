@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Header } from './components/Header';
 import { PinCard } from './components/PinCard';
 import { PinDetail } from './components/PinDetail';
@@ -6,13 +6,13 @@ import { Profile } from './components/Profile';
 import { BoardDetail } from './components/BoardDetail';
 import { Pin, User, Board, ViewState, Filter } from './types';
 import { generatePinDetails, getPersonalizedTopics } from './services/geminiService';
-import { Wand2, Plus, SlidersHorizontal, ArrowUp, ScanLine, Loader2, Archive, X, ArrowRight, Zap, Play } from 'lucide-react';
+import { Wand2, Plus, SlidersHorizontal, ArrowUp, ScanLine, Loader2, Archive, X, ArrowRight, Zap, Play, ChevronLeft, ChevronRight, Palette, Layout, Sparkles } from 'lucide-react';
 
 const DEFAULT_TOPICS = [
   "Eco Brutalism", "Neon Cyberpunk", "Sustainable Fashion", "Parametric Architecture", 
   "Abstract 3D Art", "Forest Cabins", "Ceramic Design", "Swiss Typography",
   "Streetwear 2025", "Cozy Lofts", "Futuristic UI/UX", "Matcha Aesthetic", "Plant Based",
-  "Solar Punk", "DIY Tech", "Tattoo Art", "Glassmorphism"
+  "Solar Punk", "DIY Tech", "Tattoo Art", "Glassmorphism", "Retro Anime", "Vaporwave", "Minimalist Setup"
 ];
 
 // Mock Data Generators
@@ -119,6 +119,11 @@ const App: React.FC = () => {
   // --- Innovation: Stash Drawer ---
   const [stash, setStash] = useState<Pin[]>([]);
   const [showStash, setShowStash] = useState(false);
+  const [isCanvasMode, setIsCanvasMode] = useState(false);
+
+  // --- Navigation Scroll Refs ---
+  const categoryScrollRef = useRef<HTMLDivElement>(null);
+  const storiesScrollRef = useRef<HTMLDivElement>(null);
 
   // --- Personalization ---
   const [loading, setLoading] = useState(false);
@@ -220,6 +225,27 @@ const App: React.FC = () => {
       }
   };
 
+  // Navigation Scroll Logic
+  const scrollCategories = (direction: 'left' | 'right') => {
+      if (categoryScrollRef.current) {
+          const scrollAmount = 300;
+          categoryScrollRef.current.scrollBy({
+              left: direction === 'left' ? -scrollAmount : scrollAmount,
+              behavior: 'smooth'
+          });
+      }
+  };
+
+  const scrollStories = (direction: 'left' | 'right') => {
+      if (storiesScrollRef.current) {
+          const scrollAmount = 400;
+          storiesScrollRef.current.scrollBy({
+              left: direction === 'left' ? -scrollAmount : scrollAmount,
+              behavior: 'smooth'
+          });
+      }
+  }
+
   // Content Renderer
   const renderContent = () => {
       if (loading) {
@@ -319,6 +345,9 @@ const App: React.FC = () => {
                     onBack={() => goBack()}
                     onPinClick={handlePinClick}
                     onInvite={handleInviteToBoard}
+                    onMoreLikeThis={handleMoreLikeThis}
+                    onStash={handleAddToStash}
+                    onTagClick={handleSearch}
                   />
               );
 
@@ -356,30 +385,63 @@ const App: React.FC = () => {
           default:
               return (
                   <>
-                      {/* Sparks / Stories Bar (Innovation) */}
-                      <div className="mb-10 overflow-x-auto scrollbar-hide">
-                         <div className="flex gap-6 px-2">
-                             <div className="flex flex-col items-center gap-2 cursor-pointer group">
-                                 <div className="w-20 h-20 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center group-hover:border-emerald-500 transition-colors">
-                                     <Plus size={28} className="text-gray-400 group-hover:text-emerald-500" />
+                      {/* Sparks / Stories - Modern Rectangular Cards */}
+                      <div className="relative mb-12 group/stories">
+                         {/* Navigation Buttons */}
+                         <button 
+                            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/90 backdrop-blur-xl rounded-full shadow-xl flex items-center justify-center text-gray-800 opacity-0 group-hover/stories:opacity-100 hover:bg-white hover:scale-110 transition-all duration-300 border border-white/20 -ml-4"
+                            onClick={() => scrollStories('left')}
+                         >
+                            <ChevronLeft size={24} />
+                         </button>
+                         <button 
+                            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/90 backdrop-blur-xl rounded-full shadow-xl flex items-center justify-center text-gray-800 opacity-0 group-hover/stories:opacity-100 hover:bg-white hover:scale-110 transition-all duration-300 border border-white/20 -mr-4"
+                            onClick={() => scrollStories('right')}
+                         >
+                            <ChevronRight size={24} />
+                         </button>
+
+                         <div 
+                            ref={storiesScrollRef}
+                            className="flex gap-4 px-2 overflow-x-auto scrollbar-hide py-4 snap-x snap-mandatory"
+                            style={{ maskImage: 'linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%)' }}
+                         >
+                             {/* Add Spark Card */}
+                             <div className="flex-shrink-0 w-32 h-56 rounded-2xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer group hover:border-emerald-500 hover:bg-emerald-50/50 transition-all snap-start">
+                                 <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-2 group-hover:scale-110 transition">
+                                     <Plus size={24} />
                                  </div>
-                                 <span className="text-xs font-bold text-gray-500">Add Spark</span>
+                                 <span className="text-sm font-bold text-gray-500">Add Story</span>
                              </div>
-                             {[1,2,3,4,5,6,7].map(i => (
-                                 <div key={i} className="flex flex-col items-center gap-2 cursor-pointer group">
-                                     <div className="relative w-20 h-20 p-[3px] rounded-full bg-gradient-to-tr from-emerald-400 via-teal-400 to-lime-400">
-                                         <div className="w-full h-full rounded-full border-2 border-white overflow-hidden bg-white">
-                                             <img src={`https://picsum.photos/seed/user${i}/100/100`} className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
+
+                             {[1,2,3,4,5,6,7,8,9,10].map(i => (
+                                 <div key={i} className="flex-shrink-0 w-32 h-56 relative rounded-2xl overflow-hidden cursor-pointer group snap-start transition-transform duration-300 hover:-translate-y-2 hover:shadow-2xl">
+                                     <img 
+                                        src={`https://picsum.photos/seed/spark${i}/300/600`} 
+                                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                                        loading="lazy"
+                                     />
+                                     <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-transparent to-black/80"></div>
+                                     
+                                     {/* Live/New Badge */}
+                                     {i % 3 === 0 && (
+                                         <div className="absolute top-3 right-3 bg-red-500/90 backdrop-blur text-white text-[10px] font-black px-2 py-1 rounded-md border border-white/20 animate-pulse">
+                                             LIVE
                                          </div>
-                                         {i === 1 && <div className="absolute bottom-0 right-0 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-white animate-pulse">LIVE</div>}
+                                     )}
+
+                                     <div className="absolute bottom-3 left-3 right-3 flex items-center gap-2">
+                                         <div className="w-8 h-8 rounded-full border-2 border-white p-0.5 overflow-hidden bg-black">
+                                            <img src={`https://picsum.photos/seed/user${i}/100/100`} className="w-full h-full rounded-full object-cover"/>
+                                         </div>
+                                         <span className="text-xs font-bold text-white truncate text-shadow">Creator_{i}</span>
                                      </div>
-                                     <span className="text-xs font-bold text-gray-600 group-hover:text-emerald-600">User_{i}</span>
                                  </div>
                              ))}
                          </div>
                       </div>
 
-                      <div className="masonry-grid pb-24 animate-in fade-in duration-500">
+                      <div className={`masonry-grid pb-24 animate-in fade-in duration-500 ${isCanvasMode ? 'opacity-50 blur-sm scale-95 pointer-events-none' : ''}`}>
                           {homePins.map(pin => (
                               <PinCard 
                                 key={pin.id} 
@@ -412,93 +474,147 @@ const App: React.FC = () => {
         onForward={goForward}
       />
       
-      {/* Category Navigation Bar - Floating below header */}
+      {/* Advanced Carousel Category Navigation - Floating below header */}
       {viewState === ViewState.HOME && (
-          <div className="fixed top-[84px] left-0 right-0 z-40 py-3 transition-all">
-             <div className="flex items-center gap-2 overflow-x-auto px-4 scrollbar-hide max-w-[1920px] mx-auto">
+          <div className="fixed top-[88px] left-0 right-0 z-40 py-2 group/nav">
+             <div className="max-w-[1920px] mx-auto px-4 relative">
+                
+                {/* Left Fade & Button */}
+                <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none"></div>
                 <button 
-                    className="px-5 py-2.5 rounded-full font-bold text-sm whitespace-nowrap transition-all duration-300 backdrop-blur-md border border-white/20 shadow-sm bg-black text-white hover:scale-105"
-                    onClick={() => setActiveCategory("For You")}
+                    onClick={() => scrollCategories('left')}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white/80 backdrop-blur-md rounded-full shadow-lg border border-white/40 flex items-center justify-center text-gray-700 hover:bg-black hover:text-white transition-all active:scale-95 opacity-0 group-hover/nav:opacity-100"
                 >
-                    For You
+                    <ChevronLeft size={20} strokeWidth={3} />
                 </button>
-                {DEFAULT_TOPICS.slice(0, 10).map((cat, i) => (
+
+                {/* Scroll Container */}
+                <div 
+                    ref={categoryScrollRef}
+                    className="flex items-center gap-3 overflow-x-auto scrollbar-hide px-4 py-2 scroll-smooth"
+                >
                     <button 
-                        key={i}
-                        onClick={() => { setActiveCategory(cat); handleSearch(cat); }}
-                        className={`px-5 py-2.5 rounded-full font-bold text-sm whitespace-nowrap transition-all duration-300 backdrop-blur-md border border-white/20 shadow-sm
-                            ${activeCategory === cat 
-                                ? 'bg-black text-white transform scale-105' 
-                                : 'bg-white/80 text-gray-600 hover:bg-emerald-50 hover:text-emerald-700'}`}
+                        className="px-6 py-3 rounded-2xl font-black text-sm whitespace-nowrap transition-all duration-300 backdrop-blur-md shadow-lg border border-black/5 flex-shrink-0 bg-black text-white hover:scale-105 active:scale-95 flex items-center gap-2"
+                        onClick={() => setActiveCategory("For You")}
                     >
-                        {cat}
+                        <Sparkles size={14} className="text-yellow-300 fill-yellow-300" /> For You
                     </button>
-                ))}
+                    {DEFAULT_TOPICS.map((cat, i) => (
+                        <button 
+                            key={i}
+                            onClick={() => { setActiveCategory(cat); handleSearch(cat); }}
+                            className={`px-6 py-3 rounded-2xl font-bold text-sm whitespace-nowrap transition-all duration-300 backdrop-blur-md shadow-sm border border-gray-100 flex-shrink-0
+                                ${activeCategory === cat 
+                                    ? 'bg-emerald-500 text-white shadow-emerald-200 shadow-lg transform scale-105' 
+                                    : 'bg-white hover:bg-gray-50 text-gray-600 hover:text-emerald-700 hover:shadow-md'}`}
+                        >
+                            {cat}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Right Fade & Button */}
+                <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none"></div>
+                <button 
+                    onClick={() => scrollCategories('right')}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white/80 backdrop-blur-md rounded-full shadow-lg border border-white/40 flex items-center justify-center text-gray-700 hover:bg-black hover:text-white transition-all active:scale-95 opacity-0 group-hover/nav:opacity-100"
+                >
+                    <ChevronRight size={20} strokeWidth={3} />
+                </button>
              </div>
           </div>
       )}
       
-      <main className={`px-4 max-w-[1920px] mx-auto min-h-screen ${viewState === ViewState.HOME ? 'pt-48' : 'pt-32'}`}>
+      <main className={`px-4 max-w-[1920px] mx-auto min-h-screen transition-all duration-500 ${viewState === ViewState.HOME ? 'pt-52' : 'pt-36'}`}>
         {renderContent()}
       </main>
 
       {/* Innovation: STASH DRAWER */}
-      <div className={`fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-t border-gray-200 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] transition-transform duration-500 ease-in-out ${showStash ? 'translate-y-0' : 'translate-y-full'}`}>
+      <div className={`fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-2xl border-t border-gray-200 shadow-[0_-10px_60px_rgba(0,0,0,0.15)] transition-transform duration-500 ease-in-out ${showStash ? 'translate-y-0' : 'translate-y-full'}`}>
           <div 
-             className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black text-white px-6 py-2 rounded-t-2xl cursor-pointer flex items-center gap-2 font-bold shadow-lg"
+             className="absolute -top-12 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-8 py-3 rounded-t-3xl cursor-pointer flex items-center gap-3 font-bold shadow-2xl hover:pb-5 transition-all"
              onClick={() => setShowStash(!showStash)}
           >
-              <Archive size={18} /> Stash ({stash.length})
+              <Archive size={20} className="text-emerald-400" /> Stash ({stash.length})
           </div>
           
-          {/* Drawer Content */}
-          <div className="p-6 h-64 flex flex-col">
-             <div className="flex justify-between items-center mb-4">
-                 <h3 className="text-xl font-bold text-gray-900">Idea Stash</h3>
-                 <div className="flex gap-2">
-                     <button className="text-sm text-gray-500 hover:text-red-500" onClick={() => setStash([])}>Clear All</button>
-                     <button onClick={() => setShowStash(false)}><X size={24}/></button>
+          <div className="p-8 h-72 flex flex-col">
+             <div className="flex justify-between items-center mb-6">
+                 <h3 className="text-2xl font-black text-gray-900 tracking-tight">Idea Stash</h3>
+                 <div className="flex gap-4">
+                     <button className="text-sm font-bold text-gray-500 hover:text-red-500 transition-colors" onClick={() => setStash([])}>Clear All</button>
+                     <button onClick={() => setShowStash(false)} className="p-2 hover:bg-gray-100 rounded-full"><X size={24}/></button>
                  </div>
              </div>
              
              {stash.length === 0 ? (
-                 <div className="flex-1 flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-300 rounded-xl">
-                     <Archive size={48} className="mb-2 opacity-20"/>
-                     <p>Drop ideas here to organize later</p>
+                 <div className="flex-1 flex flex-col items-center justify-center text-gray-400 border-3 border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
+                     <Archive size={48} className="mb-4 opacity-20"/>
+                     <p className="font-medium">Drop ideas here to organize later</p>
                  </div>
              ) : (
-                 <div className="flex gap-4 overflow-x-auto pb-4 h-full scrollbar-thin">
+                 <div className="flex gap-6 overflow-x-auto pb-6 h-full scrollbar-thin px-2">
                      {stash.map((pin, i) => (
-                         <div key={i} className="relative min-w-[120px] w-[120px] h-full rounded-xl overflow-hidden group">
+                         <div key={i} className="relative min-w-[140px] w-[140px] h-full rounded-2xl overflow-hidden group shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
                              <img src={pin.imageUrl} className="w-full h-full object-cover" />
+                             <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                              <button 
-                                className="absolute top-2 right-2 bg-white/80 p-1 rounded-full hover:bg-red-500 hover:text-white transition"
+                                className="absolute top-2 right-2 bg-white p-1.5 rounded-full hover:bg-red-500 hover:text-white transition shadow-sm"
                                 onClick={() => setStash(stash.filter(p => p.id !== pin.id))}
                              >
-                                 <X size={12} />
+                                 <X size={14} />
                              </button>
                          </div>
                      ))}
-                     {/* Quick Action Card */}
-                     <div className="min-w-[120px] bg-gray-100 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-emerald-50 hover:text-emerald-600 transition">
-                         <div className="p-2 bg-white rounded-full shadow-sm">
-                            <ArrowRight size={20} />
+                     <div className="min-w-[140px] bg-gray-100 rounded-2xl flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-emerald-50 hover:text-emerald-600 transition border-2 border-dashed border-gray-300 hover:border-emerald-300">
+                         <div className="p-3 bg-white rounded-full shadow-sm">
+                            <ArrowRight size={24} />
                          </div>
-                         <span className="text-xs font-bold">Move to Board</span>
+                         <span className="text-xs font-bold uppercase tracking-wider">Move to Board</span>
                      </div>
                  </div>
              )}
           </div>
       </div>
 
-      {/* Floating Action Button - Refresh Feed (Magic Shuffle) */}
-      <div className={`fixed bottom-8 right-8 z-40 flex flex-col gap-4 items-end transition-transform duration-300 ${showStash ? '-translate-y-64' : 'translate-y-0'}`}>
+      {/* Innovation: CREATIVE STUDIO DOCK (Replaces simple refresh) */}
+      <div className={`fixed bottom-8 right-8 z-40 flex flex-col gap-4 items-end transition-transform duration-500 ${showStash ? '-translate-y-80' : 'translate-y-0'}`}>
+         
+         {/* Action Buttons */}
+         <div className="flex flex-col gap-3 items-end">
+            <button 
+                className={`p-3 rounded-full shadow-lg transition-all duration-300 flex items-center gap-3 pr-5 hover:pr-6 group
+                    ${isCanvasMode ? 'bg-black text-emerald-400' : 'bg-white text-gray-700 hover:text-black'}`}
+                onClick={() => setIsCanvasMode(!isCanvasMode)}
+                title="Canvas Mode"
+            >
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isCanvasMode ? 'bg-emerald-500/20' : 'bg-gray-100 group-hover:bg-emerald-100'}`}>
+                    <Layout size={20} />
+                </div>
+                <span className="font-bold text-sm hidden group-hover:block animate-in slide-in-from-right-2">Canvas</span>
+            </button>
+
+             <button 
+                className="p-3 bg-white rounded-full shadow-lg text-gray-700 hover:text-purple-600 transition-all duration-300 flex items-center gap-3 pr-5 hover:pr-6 group"
+                title="Color DNA"
+                onClick={() => alert("Extracting Palette from View...")}
+             >
+                <div className="w-10 h-10 rounded-full bg-gray-100 group-hover:bg-purple-100 flex items-center justify-center">
+                    <Palette size={20} />
+                </div>
+                <span className="font-bold text-sm hidden group-hover:block animate-in slide-in-from-right-2">Palette</span>
+            </button>
+         </div>
+
+         {/* Main Magic Button */}
          <button 
-            className="w-16 h-16 bg-gradient-to-tr from-emerald-500 to-teal-600 rounded-full flex items-center justify-center text-white shadow-2xl hover:scale-110 hover:rotate-90 transition-all duration-500 group"
+            className="w-20 h-20 bg-black rounded-[28px] flex items-center justify-center text-white shadow-2xl hover:scale-105 hover:rotate-3 transition-all duration-500 group relative overflow-hidden"
             onClick={() => loadPersonalizedFeed()}
-            title="Shuffle Feed"
+            title="Magic Shuffle"
          >
-             <Zap size={28} className="group-hover:text-lime-200 fill-white" />
+             <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500 to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+             <Zap size={32} className="relative z-10 group-hover:animate-[spin_1s_ease-in-out] fill-yellow-400 text-yellow-400" />
          </button>
       </div>
 
@@ -524,8 +640,8 @@ const App: React.FC = () => {
             20% { transform: translateX(100%); }
             100% { transform: translateX(100%); }
         }
-        .zen-mode header, .zen-mode .fixed.bottom-0, .zen-mode .fixed.bottom-8 {
-            /* Handled by component logic mostly, but CSS class helps with body scroll etc */
+        .text-shadow {
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
         }
       `}</style>
     </div>

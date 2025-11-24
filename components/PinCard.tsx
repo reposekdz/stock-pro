@@ -1,5 +1,5 @@
 import React, { useState, useRef, MouseEvent } from 'react';
-import { Share2, MoreHorizontal, ChevronDown, Check, ScanSearch, Archive, Heart, Hash, Eye, TrendingUp } from 'lucide-react';
+import { Share2, MoreHorizontal, ChevronDown, Check, ScanSearch, Archive, Heart, Hash, Eye, TrendingUp, Wand2 } from 'lucide-react';
 import { Pin, Board } from '../types';
 
 interface PinCardProps {
@@ -23,6 +23,7 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
   const [showBoardSelect, setShowBoardSelect] = useState(false);
   const [showHeart, setShowHeart] = useState(false);
   const [isPeeking, setIsPeeking] = useState(false);
+  const [isRemixing, setIsRemixing] = useState(false);
   
   // 3D Tilt & Peek State
   const cardRef = useRef<HTMLDivElement>(null);
@@ -69,6 +70,12 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
       onTagClick(tag);
   }
 
+  const handleRemixClick = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setIsRemixing(true);
+      setTimeout(() => setIsRemixing(false), 2000); // Simulate AI loading
+  }
+
   // Double Click to Like Innovation
   const handleDoubleClick = (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -88,8 +95,8 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
       const centerX = rect.width / 2;
       const centerY = rect.height / 2;
       
-      const rotateX = ((y - centerY) / centerY) * -5; // Max 5deg rotation
-      const rotateY = ((x - centerX) / centerX) * 5;
+      const rotateX = ((y - centerY) / centerY) * -3; // Subtle tilt
+      const rotateY = ((x - centerX) / centerX) * 3;
 
       setRotation({ x: rotateX, y: rotateY });
   };
@@ -99,7 +106,7 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
       // Innovation: Hold to Peek
       peekTimeout.current = setTimeout(() => {
           setIsPeeking(true);
-      }, 800);
+      }, 1500); // Increased delay to prevent accidental peeking
   }
 
   const handleMouseLeave = () => {
@@ -113,7 +120,7 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
   return (
     <div 
       ref={cardRef}
-      className="relative mb-6 break-inside-avoid rounded-[32px] cursor-zoom-in group perspective-1000 z-0 hover:z-20"
+      className="relative mb-8 break-inside-avoid rounded-[28px] cursor-zoom-in group perspective-1000 z-0 hover:z-20"
       onMouseEnter={handleMouseEnter}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
@@ -124,19 +131,27 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
       }}
     >
       <div 
-        className="relative w-full h-full rounded-[32px] overflow-hidden bg-gray-100 transition-all duration-300 ease-out shadow-lg group-hover:shadow-[0_20px_50px_rgba(0,0,0,0.15)]"
+        className="relative w-full h-full rounded-[28px] overflow-hidden bg-gray-200 transition-all duration-300 ease-out shadow-sm group-hover:shadow-[0_20px_40px_rgba(0,0,0,0.2)]"
         style={{
             transform: isPeeking ? 'scale(1.05) translateY(-10px)' : `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) scale(${isHovered ? 1.02 : 1})`,
             transformStyle: 'preserve-3d'
         }}
       >
+          {/* AI Remix Overlay */}
+          {isRemixing && (
+             <div className="absolute inset-0 z-40 bg-black/60 backdrop-blur-md flex flex-col items-center justify-center text-white animate-in fade-in">
+                 <Wand2 size={48} className="animate-spin mb-4 text-emerald-400" />
+                 <p className="font-bold tracking-widest uppercase text-sm">Generating Variations...</p>
+             </div>
+          )}
+
           <img 
             src={pin.imageUrl} 
             alt={pin.title}
             className="w-full h-auto object-cover pointer-events-none transition-all duration-700 ease-in-out"
             style={{ 
                 aspectRatio: `${pin.width} / ${pin.height}`,
-                filter: isHovered && !isPeeking ? 'brightness(0.7) contrast(1.1)' : 'none',
+                filter: isHovered && !isPeeking ? 'brightness(0.85) contrast(1.1)' : 'none',
             }}
             loading="lazy"
           />
@@ -147,7 +162,7 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
           </div>
 
           {/* Peek Overlay (Stats) - Appears on Long Hover */}
-          <div className={`absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-white transition-opacity duration-300 ${isPeeking ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+          <div className={`absolute inset-0 bg-black/70 backdrop-blur-md flex flex-col items-center justify-center p-6 text-white transition-opacity duration-300 ${isPeeking ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
              <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center mb-4 animate-bounce">
                 <Eye size={32} className="text-emerald-400" />
              </div>
@@ -161,9 +176,6 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
                      <p className="text-xs text-gray-400 font-bold uppercase">Saves</p>
                      <p className="font-mono text-lg font-bold text-emerald-300">{pin.likes.toLocaleString()}</p>
                  </div>
-             </div>
-             <div className="mt-6 flex items-center gap-1 text-emerald-400 text-sm font-bold">
-                 <TrendingUp size={16} /> Rising Trend
              </div>
           </div>
 
@@ -187,7 +199,7 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
                       className={`px-5 py-3 font-bold text-sm transition-all duration-300 flex items-center gap-2
                         ${isSaved 
                             ? 'bg-black text-white' 
-                            : 'bg-gradient-to-br from-emerald-500 via-teal-500 to-teal-600 text-white hover:from-emerald-400 hover:to-teal-500'}`}
+                            : 'bg-emerald-600 text-white hover:bg-emerald-500'}`}
                       onClick={handleQuickSave}
                     >
                       {isSaved ? 'Saved' : 'Save'}
@@ -196,7 +208,7 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
                     <button 
                         className={`p-3 border-l border-white/10 ${isSaved 
                             ? 'bg-black text-white hover:bg-gray-800' 
-                            : 'bg-gradient-to-br from-teal-600 to-teal-700 text-white hover:brightness-110'}`}
+                            : 'bg-emerald-700 text-white hover:brightness-110'}`}
                         onClick={handleBoardSelectClick}
                     >
                         <ChevronDown size={16} />
@@ -230,22 +242,31 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
 
               {/* Middle - Innovation Actions */}
               <div 
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex gap-3 scale-0 group-hover:scale-100 transition-transform duration-300 delay-100"
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col gap-3 scale-0 group-hover:scale-100 transition-transform duration-300 delay-100"
                   style={{ transform: 'translate(-50%, -50%) translateZ(30px)' }}
               >
+                    <div className="flex gap-3">
+                        <button 
+                            onClick={handleMoreLikeThisClick}
+                            className="p-3.5 bg-white/20 backdrop-blur-xl rounded-full text-white hover:bg-white hover:text-black hover:scale-110 transition-all shadow-lg border border-white/30 group/btn"
+                            title="Find similar ideas"
+                        >
+                            <ScanSearch size={22} className="group-hover/btn:animate-pulse" />
+                        </button>
+                        <button 
+                            onClick={handleStashClick}
+                            className="p-3.5 bg-white/20 backdrop-blur-xl rounded-full text-white hover:bg-white hover:text-black hover:scale-110 transition-all shadow-lg border border-white/30"
+                            title="Add to Stash"
+                        >
+                            <Archive size={22} />
+                        </button>
+                    </div>
+                    {/* Innovation: AI Remix Button */}
                     <button 
-                        onClick={handleMoreLikeThisClick}
-                        className="p-4 bg-white/20 backdrop-blur-lg rounded-full text-white hover:bg-emerald-500 hover:scale-110 transition-all shadow-lg border border-white/30 group/btn"
-                        title="Find similar ideas"
+                        onClick={handleRemixClick}
+                        className="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full text-white font-bold text-xs shadow-lg hover:scale-105 transition-all border border-white/20"
                     >
-                        <ScanSearch size={24} className="group-hover/btn:animate-pulse" />
-                    </button>
-                    <button 
-                        onClick={handleStashClick}
-                        className="p-4 bg-white/20 backdrop-blur-lg rounded-full text-white hover:bg-emerald-500 hover:scale-110 transition-all shadow-lg border border-white/30"
-                        title="Add to Stash"
-                    >
-                        <Archive size={24} />
+                        <Wand2 size={14} /> Remix
                     </button>
               </div>
 
@@ -254,40 +275,26 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
                   className="flex flex-col gap-3 translate-y-4 group-hover:translate-y-0 transition-transform duration-300 delay-75"
                   style={{ transform: 'translateZ(20px)' }}
                >
-                 
-                 {/* Innovation: Palette Extractor */}
-                 <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-200">
-                     {MOCK_PALETTE.map((color, i) => (
-                         <div 
-                            key={i} 
-                            className="w-4 h-4 rounded-full shadow-md border border-white/20 hover:scale-150 transition-transform cursor-pointer"
-                            style={{ backgroundColor: color }}
-                            title={`Filter by ${color}`}
-                            onClick={(e) => { e.stopPropagation(); /* Trigger color filter logic */ }}
-                         ></div>
-                     ))}
-                 </div>
-
                  <div className="flex justify-between items-end gap-2">
-                    {/* Interactive Tags (Replaces Source) */}
+                    {/* Interactive Tags */}
                     <div className="flex flex-wrap gap-1.5 max-w-[75%]">
-                        {pin.tags.slice(0, 3).map((tag, idx) => (
+                        {pin.tags.slice(0, 2).map((tag, idx) => (
                             <button
                                 key={idx}
                                 onClick={(e) => handleTagClick(e, tag)}
-                                className="px-2.5 py-1 bg-black/40 backdrop-blur-md rounded-full text-[11px] font-bold text-white hover:bg-emerald-500 hover:text-white transition-all border border-white/10 flex items-center gap-1 hover:scale-105 shadow-sm active:scale-95"
+                                className="px-3 py-1.5 bg-white/90 backdrop-blur-md rounded-full text-[11px] font-bold text-gray-800 hover:bg-black hover:text-white transition-all shadow-sm active:scale-95"
                             >
-                                <Hash size={10} className="opacity-70" /> {tag}
+                                #{tag}
                             </button>
                         ))}
                     </div>
 
                     <div className="flex gap-2">
                         <button className="bg-white/90 backdrop-blur-xl p-2.5 rounded-full hover:bg-white text-black shadow-lg transition-all hover:scale-110">
-                        <Share2 size={18} />
+                            <Share2 size={18} />
                         </button>
                         <button className="bg-white/90 backdrop-blur-xl p-2.5 rounded-full hover:bg-white text-black shadow-lg transition-all hover:scale-110">
-                        <MoreHorizontal size={18} />
+                            <MoreHorizontal size={18} />
                         </button>
                     </div>
                  </div>

@@ -10,9 +10,22 @@ interface BoardDetailProps {
     onBack: () => void;
     onPinClick: (pin: Pin) => void;
     onInvite: (email: string) => void;
+    onMoreLikeThis: (pin: Pin) => void;
+    onStash: (pin: Pin) => void;
+    onTagClick: (tag: string) => void;
 }
 
-export const BoardDetail: React.FC<BoardDetailProps> = ({ board, pins, allBoards, onBack, onPinClick, onInvite }) => {
+export const BoardDetail: React.FC<BoardDetailProps> = ({ 
+    board, 
+    pins, 
+    allBoards, 
+    onBack, 
+    onPinClick, 
+    onInvite,
+    onMoreLikeThis,
+    onStash,
+    onTagClick
+}) => {
     const [showInviteInput, setShowInviteInput] = useState(false);
     const [inviteEmail, setInviteEmail] = useState("");
 
@@ -86,6 +99,9 @@ export const BoardDetail: React.FC<BoardDetailProps> = ({ board, pins, allBoards
                         pin={pin} 
                         onClick={onPinClick} 
                         onSave={() => {}} 
+                        onMoreLikeThis={onMoreLikeThis}
+                        onStash={onStash}
+                        onTagClick={onTagClick}
                         boards={allBoards}
                     />
                 ))}
