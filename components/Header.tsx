@@ -94,8 +94,8 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className={`fixed top-4 left-4 right-4 z-50 transition-all duration-500 ease-in-out ${zenMode ? '-translate-y-32 opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'}`}>
-      <div className="bg-white/90 backdrop-blur-2xl rounded-full px-3 py-3 shadow-2xl border border-white/60 flex items-center justify-between gap-3 md:gap-4 relative overflow-visible z-50">
+    <header className={`fixed top-4 left-4 right-4 z-[100] transition-all duration-500 ease-in-out ${zenMode ? '-translate-y-32 opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'}`}>
+      <div className="bg-white/80 backdrop-blur-2xl rounded-full px-3 py-3 shadow-[0_8px_32px_rgba(0,0,0,0.08)] border border-white/50 flex items-center justify-between gap-3 md:gap-4 relative overflow-visible z-50">
         
         <div className="flex items-center gap-4 pl-1">
           {/* Interactive Logo */}
@@ -135,7 +135,7 @@ export const Header: React.FC<HeaderProps> = ({
           <input 
             type="text"
             placeholder="Search for ideas, styles, and inspiration..."
-            className="w-full bg-gray-100/80 hover:bg-white focus:bg-white focus:ring-4 focus:ring-emerald-100 text-gray-900 rounded-full py-3.5 pl-12 pr-24 outline-none transition-all duration-300 shadow-inner focus:shadow-xl font-medium placeholder:text-gray-400 text-base"
+            className="w-full bg-gray-100/50 hover:bg-gray-100 focus:bg-white focus:ring-4 focus:ring-emerald-100 text-gray-900 rounded-full py-3.5 pl-12 pr-24 outline-none transition-all duration-300 shadow-inner focus:shadow-xl font-medium placeholder:text-gray-400 text-base border border-transparent focus:border-emerald-200/50"
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
             onFocus={() => setShowSuggestions(true)}

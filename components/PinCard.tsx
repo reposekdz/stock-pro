@@ -12,11 +12,6 @@ interface PinCardProps {
   boards: Board[];
 }
 
-// Mock color extraction for innovation feature
-const MOCK_PALETTE = [
-    "#2D3436", "#00B894", "#55EFC4", "#81ECEC", "#74B9FF"
-];
-
 export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLikeThis, onStash, onTagClick, boards }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
@@ -95,8 +90,8 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
       const centerX = rect.width / 2;
       const centerY = rect.height / 2;
       
-      const rotateX = ((y - centerY) / centerY) * -3; // Subtle tilt
-      const rotateY = ((x - centerX) / centerX) * 3;
+      const rotateX = ((y - centerY) / centerY) * -2; // Subtle tilt
+      const rotateY = ((x - centerX) / centerX) * 2;
 
       setRotation({ x: rotateX, y: rotateY });
   };
@@ -106,7 +101,7 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
       // Innovation: Hold to Peek
       peekTimeout.current = setTimeout(() => {
           setIsPeeking(true);
-      }, 1500); // Increased delay to prevent accidental peeking
+      }, 800); 
   }
 
   const handleMouseLeave = () => {
@@ -120,7 +115,7 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
   return (
     <div 
       ref={cardRef}
-      className="relative mb-8 break-inside-avoid rounded-[28px] cursor-zoom-in group perspective-1000 z-0 hover:z-20"
+      className="relative mb-6 break-inside-avoid rounded-[28px] cursor-zoom-in group perspective-1000 z-0 hover:z-20"
       onMouseEnter={handleMouseEnter}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
@@ -131,7 +126,7 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
       }}
     >
       <div 
-        className="relative w-full h-full rounded-[28px] overflow-hidden bg-gray-200 transition-all duration-300 ease-out shadow-sm group-hover:shadow-[0_20px_40px_rgba(0,0,0,0.2)]"
+        className="relative w-full h-full rounded-[28px] overflow-hidden bg-gray-200 transition-all duration-300 ease-out shadow-sm group-hover:shadow-[0_20px_40px_rgba(0,0,0,0.15)]"
         style={{
             transform: isPeeking ? 'scale(1.05) translateY(-10px)' : `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) scale(${isHovered ? 1.02 : 1})`,
             transformStyle: 'preserve-3d'
@@ -139,7 +134,7 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
       >
           {/* AI Remix Overlay */}
           {isRemixing && (
-             <div className="absolute inset-0 z-40 bg-black/60 backdrop-blur-md flex flex-col items-center justify-center text-white animate-in fade-in">
+             <div className="absolute inset-0 z-40 bg-black/80 backdrop-blur-md flex flex-col items-center justify-center text-white animate-in fade-in">
                  <Wand2 size={48} className="animate-spin mb-4 text-emerald-400" />
                  <p className="font-bold tracking-widest uppercase text-sm">Generating Variations...</p>
              </div>
@@ -151,7 +146,7 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
             className="w-full h-auto object-cover pointer-events-none transition-all duration-700 ease-in-out"
             style={{ 
                 aspectRatio: `${pin.width} / ${pin.height}`,
-                filter: isHovered && !isPeeking ? 'brightness(0.85) contrast(1.1)' : 'none',
+                filter: isHovered && !isPeeking ? 'brightness(0.9) contrast(1.05)' : 'none',
             }}
             loading="lazy"
           />
@@ -162,19 +157,19 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
           </div>
 
           {/* Peek Overlay (Stats) - Appears on Long Hover */}
-          <div className={`absolute inset-0 bg-black/70 backdrop-blur-md flex flex-col items-center justify-center p-6 text-white transition-opacity duration-300 ${isPeeking ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-             <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center mb-4 animate-bounce">
-                <Eye size={32} className="text-emerald-400" />
+          <div className={`absolute inset-0 bg-black/60 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-white transition-all duration-500 ${isPeeking ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+             <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center mb-4 border border-white/20">
+                <Eye size={28} className="text-emerald-400" />
              </div>
-             <h3 className="font-bold text-xl mb-2 text-center">{pin.title}</h3>
-             <div className="flex gap-4 mt-2">
+             <h3 className="font-bold text-lg mb-2 text-center leading-tight">{pin.title}</h3>
+             <div className="flex gap-6 mt-2">
                  <div className="text-center">
-                     <p className="text-xs text-gray-400 font-bold uppercase">Views</p>
-                     <p className="font-mono text-lg font-bold text-emerald-300">{(pin.likes * 12).toLocaleString()}</p>
+                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Views</p>
+                     <p className="font-mono text-xl font-bold text-emerald-300">{(pin.likes * 12).toLocaleString()}</p>
                  </div>
                  <div className="text-center">
-                     <p className="text-xs text-gray-400 font-bold uppercase">Saves</p>
-                     <p className="font-mono text-lg font-bold text-emerald-300">{pin.likes.toLocaleString()}</p>
+                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Saves</p>
+                     <p className="font-mono text-xl font-bold text-emerald-300">{pin.likes.toLocaleString()}</p>
                  </div>
              </div>
           </div>
@@ -196,7 +191,7 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
                  {/* Split Quick Save Button */}
                  <div className="relative flex items-center shadow-2xl rounded-full overflow-hidden transition-transform active:scale-95 group-hover:translate-y-0 translate-y-[-10px] ring-1 ring-white/20">
                     <button 
-                      className={`px-5 py-3 font-bold text-sm transition-all duration-300 flex items-center gap-2
+                      className={`px-4 py-3 font-bold text-sm transition-all duration-300 flex items-center gap-2
                         ${isSaved 
                             ? 'bg-black text-white' 
                             : 'bg-emerald-600 text-white hover:bg-emerald-500'}`}
@@ -231,9 +226,6 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
                                         {board.id === selectedBoard?.id && <Check size={14} className="text-emerald-600"/>}
                                     </button>
                                 ))}
-                            </div>
-                            <div className="px-3 py-2 border-t border-gray-100">
-                                 <button className="w-full py-2 bg-gray-100 rounded-lg text-xs font-bold hover:bg-gray-200">Create Board</button>
                             </div>
                         </div>
                     )}
