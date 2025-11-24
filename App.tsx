@@ -9,9 +9,11 @@ import { SettingsModal } from './components/SettingsModal';
 import { BoardDetail } from './components/BoardDetail';
 import { StoryViewer } from './components/StoryViewer';
 import { CreateModal } from './components/CreateModal';
+import { UserListModal } from './components/UserListModal';
+import { Messages } from './components/Messages'; // Added
 import { Pin, User, Board, ViewState, Filter, Story, Collaborator } from './types';
 import { generatePinDetails, getPersonalizedTopics } from './services/geminiService';
-import { Wand2, Plus, SlidersHorizontal, ArrowUp, ScanLine, Loader2, Archive, X, ArrowRight, Zap, Play, ChevronLeft, ChevronRight, Palette, Layout, Sparkles, RefreshCw, Layers, Settings as SettingsIcon } from 'lucide-react';
+import { Wand2, Plus, SlidersHorizontal, ArrowUp, ScanLine, Loader2, Archive, X, ArrowRight, Zap, Play, ChevronLeft, ChevronRight, Palette, Layout, Sparkles, RefreshCw, Layers, Settings as SettingsIcon, MessageSquare, Phone } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 const DEFAULT_TOPICS = [
@@ -30,6 +32,17 @@ const generateMockUser = (): User => ({
     bio: 'Curating the future of design. Digital Architect & Visual Storyteller.',
     coverUrl: 'https://picsum.photos/seed/myCover/1600/400'
 });
+
+const generateMockUserList = (count: number): User[] => {
+    return Array.from({ length: count }).map((_, i) => ({
+        id: `list-user-${i}-${Date.now()}`,
+        username: `User_${Math.floor(Math.random() * 10000)}`,
+        avatarUrl: `https://picsum.photos/seed/u${i + Math.random()}/100/100`,
+        followers: Math.floor(Math.random() * 5000),
+        following: Math.floor(Math.random() * 500),
+        bio: ['Designer', 'Artist', 'Photographer', 'Curator', 'Traveler'][Math.floor(Math.random() * 5)]
+    }));
+};
 
 const generateMockBoards = (userId: string): Board[] => [
     {
@@ -112,6 +125,33 @@ const generateMockPins = (count: number, topicSeed?: string, tagsOverride?: stri
   });
 };
 
+// --- Toast Notification Component ---
+const ToastNotification = ({ show, type, title, message, onDismiss, onAction }: { show: boolean, type: 'message' | 'call', title: string, message: string, onDismiss: () => void, onAction: () => void }) => {
+    if (!show) return null;
+    return (
+        <div 
+            className="fixed top-24 right-6 z-[250] bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-100 p-4 w-80 animate-in slide-in-from-right-full duration-500 cursor-pointer group"
+            onClick={onAction}
+        >
+            <button onClick={(e) => {e.stopPropagation(); onDismiss()}} className="absolute top-2 right-2 text-gray-400 hover:text-gray-600">
+                <X size={14}/>
+            </button>
+            <div className="flex gap-3 items-start">
+                <div className={`p-3 rounded-full ${type === 'message' ? 'bg-blue-100 text-blue-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                    {type === 'message' ? <MessageSquare size={20}/> : <Phone size={20}/>}
+                </div>
+                <div>
+                    <h4 className="font-bold text-gray-900 text-sm">{title}</h4>
+                    <p className="text-xs text-gray-500 mt-0.5">{message}</p>
+                    <span className="text-[10px] font-bold text-emerald-600 mt-2 block group-hover:translate-x-1 transition-transform">
+                        {type === 'message' ? 'Reply Now →' : 'Answer →'}
+                    </span>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 const App: React.FC = () => {
   const [viewState, setViewState] = useState<ViewState>(ViewState.HOME);
   const [historyStack, setHistoryStack] = useState<ViewState[]>([ViewState.HOME]);
@@ -153,6 +193,9 @@ const App: React.FC = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   
+  // User List Modal State (Followers/Following)
+  const [userListModalConfig, setUserListModalConfig] = useState<{isOpen: boolean, title: string, users: User[], initialTab: 'followers'|'following'} | null>(null);
+  
   const [activeStoryIndex, setActiveStoryIndex] = useState<number | null>(null);
 
   const [currentQuery, setCurrentQuery] = useState("");
@@ -166,6 +209,9 @@ const App: React.FC = () => {
   const [isCanvasMode, setIsCanvasMode] = useState(false);
   const [showCreativeDock, setShowCreativeDock] = useState(false);
 
+  // Notification State
+  const [toast, setToast] = useState<{show: boolean, type: 'message' | 'call', title: string, message: string} | null>(null);
+
   const categoryScrollRef = useRef<HTMLDivElement>(null);
   const storiesScrollRef = useRef<HTMLDivElement>(null);
 
@@ -173,6 +219,19 @@ const App: React.FC = () => {
 
   useEffect(() => {
     loadPersonalizedFeed();
+    
+    // Simulate random incoming message for "Powerful Notification"
+    setTimeout(() => {
+        setToast({
+            show: true,
+            type: 'message',
+            title: 'Sarah_UX',
+            message: 'Hey! Did you see the new moodboard?'
+        });
+        // Auto hide after 5s
+        setTimeout(() => setToast(null), 5000);
+    }, 5000);
+
   }, []); 
 
   const loadPersonalizedFeed = async () => {
@@ -330,6 +389,20 @@ const App: React.FC = () => {
       });
   };
 
+  // User List Handlers
+  const openUserList = (type: 'followers' | 'following', user: User) => {
+      // Generate mock data appropriate for the context
+      const count = type === 'followers' ? 15 : 10; // Mock count
+      const users = generateMockUserList(count);
+      
+      setUserListModalConfig({
+          isOpen: true,
+          title: type === 'followers' ? 'Followers' : 'Following',
+          users: users,
+          initialTab: type
+      });
+  };
+
   const scrollCategories = (direction: 'left' | 'right') => {
       if (categoryScrollRef.current) {
           const scrollAmount = 300;
@@ -366,6 +439,14 @@ const App: React.FC = () => {
       }
 
       switch (viewState) {
+          case ViewState.MESSAGES:
+              return (
+                  <Messages 
+                    currentUser={currentUser}
+                    onClose={goBack}
+                  />
+              );
+
           case ViewState.VISUAL_SEARCH:
               return (
                   <div className="flex flex-col items-center w-full animate-in slide-in-from-bottom-10">
@@ -425,6 +506,8 @@ const App: React.FC = () => {
                     savedPins={[]} 
                     onCreateBoard={handleCreateBoard}
                     onOpenBoard={(b) => { setSelectedBoard(b); navigateTo(ViewState.BOARD); }}
+                    onShowFollowers={() => openUserList('followers', currentUser)}
+                    onShowFollowing={() => openUserList('following', currentUser)}
                   />
               );
           
@@ -436,6 +519,8 @@ const App: React.FC = () => {
                     pins={generateMockPins(15)} // Simulate that user's pins
                     onBack={goBack}
                     onPinClick={handlePinClick}
+                    onShowFollowers={() => openUserList('followers', viewingUser)}
+                    onShowFollowing={() => openUserList('following', viewingUser)}
                   />
               );
 
@@ -585,6 +670,7 @@ const App: React.FC = () => {
         onVisualSearch={handleVisualSearch}
         onHomeClick={() => { navigateTo(ViewState.HOME); setCurrentQuery(""); setVisualSearchImage(null); }}
         onProfileClick={() => navigateTo(ViewState.PROFILE)}
+        onMessagesClick={() => navigateTo(ViewState.MESSAGES)}
         currentQuery={currentQuery}
         canGoBack={historyIndex > 0}
         canGoForward={historyIndex < historyStack.length - 1}
@@ -592,6 +678,21 @@ const App: React.FC = () => {
         onForward={goForward}
         onCreateClick={() => setIsCreateModalOpen(true)}
       />
+
+      {/* Global Toast */}
+      {toast && (
+          <ToastNotification 
+            show={toast.show} 
+            type={toast.type} 
+            title={toast.title} 
+            message={toast.message} 
+            onDismiss={() => setToast(null)} 
+            onAction={() => {
+                setToast(null);
+                navigateTo(ViewState.MESSAGES);
+            }} 
+          />
+      )}
       
       {viewState === ViewState.HOME && (
           <div className="w-full z-40 flex justify-center pointer-events-none mt-2">
@@ -760,6 +861,18 @@ const App: React.FC = () => {
           <SettingsModal 
             user={currentUser} 
             onClose={() => setIsSettingsOpen(false)} 
+          />
+      )}
+
+      {userListModalConfig && (
+          <UserListModal 
+            title={userListModalConfig.title}
+            users={userListModalConfig.users}
+            initialTab={userListModalConfig.initialTab}
+            currentUser={currentUser}
+            onClose={() => setUserListModalConfig(null)}
+            onToggleFollow={(id) => { console.log('Follow toggled for', id); }}
+            onRemoveFollower={userListModalConfig.initialTab === 'followers' && viewState === ViewState.PROFILE ? (id) => { console.log('Removed', id) } : undefined}
           />
       )}
 

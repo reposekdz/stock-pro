@@ -1,4 +1,6 @@
 
+
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Bell, MessageCircle, User as UserIcon, X, Camera, ArrowLeft, ArrowRight, Eye, Sparkles, Settings, Heart, UserPlus, Plus } from 'lucide-react';
 import { getSearchSuggestions } from '../services/geminiService';
@@ -9,6 +11,7 @@ interface HeaderProps {
   onVisualSearch: (file: File) => void;
   onHomeClick: () => void;
   onProfileClick: () => void;
+  onMessagesClick: () => void; // Added
   currentQuery?: string;
   canGoBack: boolean;
   canGoForward: boolean;
@@ -45,6 +48,7 @@ export const Header: React.FC<HeaderProps> = ({
     onVisualSearch, 
     onHomeClick, 
     onProfileClick, 
+    onMessagesClick,
     currentQuery,
     canGoBack,
     canGoForward,
@@ -259,8 +263,12 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </div>
           
-          <button className="p-3 hover:bg-gray-100 rounded-full hidden sm:block transition-transform hover:scale-110 active:scale-95 hover:text-black">
+          <button 
+             className="p-3 hover:bg-gray-100 rounded-full hidden sm:block transition-transform hover:scale-110 active:scale-95 hover:text-black relative"
+             onClick={onMessagesClick}
+          >
             <MessageCircle size={22} />
+            <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white"></span>
           </button>
           
           <button 

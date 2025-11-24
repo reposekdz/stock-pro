@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Plus, Settings, Share2 } from 'lucide-react';
 import { User, Board, Pin } from '../types';
@@ -8,9 +9,11 @@ interface ProfileProps {
     savedPins: Pin[]; 
     onCreateBoard: () => void;
     onOpenBoard: (board: Board) => void;
+    onShowFollowers: () => void;
+    onShowFollowing: () => void;
 }
 
-export const Profile: React.FC<ProfileProps> = ({ user, boards, savedPins, onCreateBoard, onOpenBoard }) => {
+export const Profile: React.FC<ProfileProps> = ({ user, boards, savedPins, onCreateBoard, onOpenBoard, onShowFollowers, onShowFollowing }) => {
     const [activeTab, setActiveTab] = useState<'created' | 'saved'>('saved');
 
     return (
@@ -22,11 +25,25 @@ export const Profile: React.FC<ProfileProps> = ({ user, boards, savedPins, onCre
                 </div>
                 <h1 className="text-4xl font-extrabold mb-1 text-gray-900 tracking-tight">{user.username}</h1>
                 <p className="text-gray-500 mb-3 font-medium">@stocpro_user</p>
-                <div className="flex gap-2 text-sm font-semibold text-gray-600 mb-8">
-                    <span>{user.followers.toLocaleString()} followers</span>
-                    <span>•</span>
-                    <span>{user.following.toLocaleString()} following</span>
+                
+                <div className="flex gap-6 text-sm font-bold text-gray-900 mb-8">
+                    <button 
+                        onClick={onShowFollowers}
+                        className="text-center cursor-pointer hover:text-emerald-600 transition group"
+                    >
+                        <span className="text-lg">{user.followers.toLocaleString()}</span>
+                        <span className="text-gray-500 font-medium ml-1 group-hover:text-emerald-600/70">followers</span>
+                    </button>
+                    <div className="w-px bg-gray-300 h-5 self-center"></div>
+                    <button 
+                        onClick={onShowFollowing}
+                        className="text-center cursor-pointer hover:text-emerald-600 transition group"
+                    >
+                        <span className="text-lg">{user.following.toLocaleString()}</span>
+                        <span className="text-gray-500 font-medium ml-1 group-hover:text-emerald-600/70">following</span>
+                    </button>
                 </div>
+
                 <div className="flex gap-3">
                     <button className="px-8 py-3 bg-gray-100 rounded-full font-bold hover:bg-gray-200 transition">Share</button>
                     <button className="px-8 py-3 bg-gray-100 rounded-full font-bold hover:bg-gray-200 transition">Edit Profile</button>

@@ -9,9 +9,11 @@ interface UserProfileProps {
     pins: Pin[];
     onBack: () => void;
     onPinClick: (pin: Pin) => void;
+    onShowFollowers: () => void;
+    onShowFollowing: () => void;
 }
 
-export const UserProfile: React.FC<UserProfileProps> = ({ user, pins, onBack, onPinClick }) => {
+export const UserProfile: React.FC<UserProfileProps> = ({ user, pins, onBack, onPinClick, onShowFollowers, onShowFollowing }) => {
     const [isFollowing, setIsFollowing] = useState(false);
     const [followerCount, setFollowerCount] = useState(user.followers);
     const [activeTab, setActiveTab] = useState<'created' | 'saved'>('created');
@@ -53,18 +55,24 @@ export const UserProfile: React.FC<UserProfileProps> = ({ user, pins, onBack, on
                         <span className="flex items-center gap-1"><Calendar size={14}/> Joined March 2024</span>
                     </div>
 
-                    <div className="flex gap-4 text-sm font-bold text-gray-900 mb-8">
-                        <div className="text-center cursor-pointer hover:text-emerald-600">
-                            <span className="block text-xl transition-all duration-300">{followerCount.toLocaleString()}</span>
-                            <span className="text-gray-500 font-normal">followers</span>
-                        </div>
-                        <div className="text-center cursor-pointer hover:text-emerald-600">
-                            <span className="block text-xl">{user.following.toLocaleString()}</span>
-                            <span className="text-gray-500 font-normal">following</span>
-                        </div>
-                        <div className="text-center cursor-pointer hover:text-emerald-600">
-                            <span className="block text-xl">4.5k</span>
-                            <span className="text-gray-500 font-normal">monthly views</span>
+                    <div className="flex gap-6 text-sm font-bold text-gray-900 mb-8">
+                        <button 
+                            onClick={onShowFollowers}
+                            className="text-center cursor-pointer hover:text-emerald-600 group transition"
+                        >
+                            <span className="block text-xl transition-all duration-300 group-hover:scale-110">{followerCount.toLocaleString()}</span>
+                            <span className="text-gray-500 font-normal group-hover:text-emerald-600/70">followers</span>
+                        </button>
+                        <button 
+                            onClick={onShowFollowing}
+                            className="text-center cursor-pointer hover:text-emerald-600 group transition"
+                        >
+                            <span className="block text-xl transition-all duration-300 group-hover:scale-110">{user.following.toLocaleString()}</span>
+                            <span className="text-gray-500 font-normal group-hover:text-emerald-600/70">following</span>
+                        </button>
+                        <div className="text-center cursor-pointer hover:text-emerald-600 group transition">
+                            <span className="block text-xl transition-all duration-300 group-hover:scale-110">4.5k</span>
+                            <span className="text-gray-500 font-normal group-hover:text-emerald-600/70">monthly views</span>
                         </div>
                     </div>
 

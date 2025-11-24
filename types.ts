@@ -82,6 +82,27 @@ export interface Notification {
   imageUrl?: string;
 }
 
+// --- Messaging Types ---
+export interface Message {
+  id: string;
+  senderId: string;
+  text: string;
+  timestamp: string;
+  type: 'text' | 'image' | 'voice' | 'pin';
+  mediaUrl?: string;
+  read: boolean;
+}
+
+export interface Conversation {
+  id: string;
+  user: User;
+  lastMessage: string;
+  lastMessageTime: string;
+  unreadCount: number;
+  messages: Message[];
+  isOnline: boolean;
+}
+
 export enum ViewState {
   HOME = 'HOME',
   SEARCH = 'SEARCH',
@@ -89,5 +110,6 @@ export enum ViewState {
   BOARD = 'BOARD',
   USER_PROFILE = 'USER_PROFILE',
   VISUAL_SEARCH = 'VISUAL_SEARCH',
-  SETTINGS = 'SETTINGS'
+  SETTINGS = 'SETTINGS',
+  MESSAGES = 'MESSAGES' // Added
 }
