@@ -5,6 +5,8 @@ export interface User {
   avatarUrl: string;
   followers: number;
   following: number;
+  bio?: string; // Added bio
+  coverUrl?: string; // Added cover image
 }
 
 export interface Collaborator extends User {
@@ -55,11 +57,22 @@ export interface Story {
   viewed: boolean;
 }
 
+export interface Notification {
+  id: string;
+  type: 'like' | 'comment' | 'follow' | 'mention';
+  user: User;
+  text: string;
+  timestamp: string;
+  read: boolean;
+  imageUrl?: string;
+}
+
 export enum ViewState {
   HOME = 'HOME',
   SEARCH = 'SEARCH',
   PROFILE = 'PROFILE',
   BOARD = 'BOARD',
   USER_PROFILE = 'USER_PROFILE',
-  VISUAL_SEARCH = 'VISUAL_SEARCH'
+  VISUAL_SEARCH = 'VISUAL_SEARCH',
+  SETTINGS = 'SETTINGS'
 }

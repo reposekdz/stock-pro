@@ -4,11 +4,13 @@ import { Header } from './components/Header';
 import { PinCard } from './components/PinCard';
 import { PinDetail } from './components/PinDetail';
 import { Profile } from './components/Profile';
+import { UserProfile } from './components/UserProfile';
+import { SettingsModal } from './components/SettingsModal';
 import { BoardDetail } from './components/BoardDetail';
 import { StoryViewer } from './components/StoryViewer';
 import { Pin, User, Board, ViewState, Filter, Story } from './types';
 import { generatePinDetails, getPersonalizedTopics } from './services/geminiService';
-import { Wand2, Plus, SlidersHorizontal, ArrowUp, ScanLine, Loader2, Archive, X, ArrowRight, Zap, Play, ChevronLeft, ChevronRight, Palette, Layout, Sparkles, RefreshCw, Layers } from 'lucide-react';
+import { Wand2, Plus, SlidersHorizontal, ArrowUp, ScanLine, Loader2, Archive, X, ArrowRight, Zap, Play, ChevronLeft, ChevronRight, Palette, Layout, Sparkles, RefreshCw, Layers, Settings as SettingsIcon } from 'lucide-react';
 
 const DEFAULT_TOPICS = [
   "Eco Brutalism", "Neon Cyberpunk", "Sustainable Fashion", "Parametric Architecture", 
@@ -17,13 +19,14 @@ const DEFAULT_TOPICS = [
   "Solar Punk", "DIY Tech", "Tattoo Art", "Glassmorphism", "Retro Anime", "Vaporwave", "Minimalist Setup"
 ];
 
-// Mock Data Generators
 const generateMockUser = (): User => ({
     id: 'current-user',
     username: 'DesignPro',
     avatarUrl: 'https://picsum.photos/seed/userPro/100/100',
     followers: 8420,
-    following: 345
+    following: 345,
+    bio: 'Curating the future of design. Digital Architect & Visual Storyteller.',
+    coverUrl: 'https://picsum.photos/seed/myCover/1600/400'
 });
 
 const generateMockBoards = (userId: string): Board[] => [
@@ -82,14 +85,14 @@ const generateMockPins = (count: number, topicSeed?: string, tagsOverride?: stri
         username: `creator_${Math.floor(Math.random() * 999)}`,
         avatarUrl: `https://picsum.photos/seed/${id}avatar/100/100`,
         followers: Math.floor(Math.random() * 10000),
-        following: Math.floor(Math.random() * 500)
+        following: Math.floor(Math.random() * 500),
+        bio: 'Just another creative soul wandering through the digital expanse.'
       }
     };
   });
 };
 
 const App: React.FC = () => {
-  // --- View State & History Management (Custom Stack) ---
   const [viewState, setViewState] = useState<ViewState>(ViewState.HOME);
   const [historyStack, setHistoryStack] = useState<ViewState[]>([ViewState.HOME]);
   const [historyIndex, setHistoryIndex] = useState(0);
@@ -116,7 +119,6 @@ const App: React.FC = () => {
       }
   };
 
-  // --- Core Data State ---
   const [currentUser] = useState<User>(generateMockUser());
   const [boards, setBoards] = useState<Board[]>(generateMockBoards(currentUser.id));
   const [homePins, setHomePins] = useState<Pin[]>([]);
@@ -126,32 +128,28 @@ const App: React.FC = () => {
   const [selectedBoard, setSelectedBoard] = useState<Board | null>(null);
   const [activeCategory, setActiveCategory] = useState("For You");
   
-  // --- Story State ---
+  // New States for Profile Viewing and Settings
+  const [viewingUser, setViewingUser] = useState<User | null>(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  
   const [activeStoryIndex, setActiveStoryIndex] = useState<number | null>(null);
 
-  // --- Search & Filters ---
   const [currentQuery, setCurrentQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
-  const [activeFilters, setActiveFilters] = useState<Filter[]>([]);
-
-  // --- Visual Search ---
+  
   const [visualSearchImage, setVisualSearchImage] = useState<string | null>(null);
   const [visualSearchScanning, setVisualSearchScanning] = useState(false);
 
-  // --- Innovation: Stash Drawer & Studio ---
   const [stash, setStash] = useState<Pin[]>([]);
   const [showStash, setShowStash] = useState(false);
   const [isCanvasMode, setIsCanvasMode] = useState(false);
   const [showCreativeDock, setShowCreativeDock] = useState(false);
 
-  // --- Navigation Scroll Refs ---
   const categoryScrollRef = useRef<HTMLDivElement>(null);
   const storiesScrollRef = useRef<HTMLDivElement>(null);
 
-  // --- Personalization ---
   const [loading, setLoading] = useState(false);
 
-  // Initialize Home Feed
   useEffect(() => {
     loadPersonalizedFeed();
   }, []); 
@@ -159,7 +157,7 @@ const App: React.FC = () => {
   const loadPersonalizedFeed = async () => {
       setLoading(true);
       try {
-          await new Promise(r => setTimeout(r, 500)); // Smooth load
+          await new Promise(r => setTimeout(r, 500));
           const newPins = generateMockPins(30);
           setHomePins(newPins);
           setStories(generateMockStories());
@@ -183,7 +181,6 @@ const App: React.FC = () => {
     setLoading(true);
     setIsSearching(true);
     
-    // Simulate complex filtering
     setTimeout(() => {
         setSearchPins(generateMockPins(20, query));
         setLoading(false);
@@ -199,7 +196,6 @@ const App: React.FC = () => {
               navigateTo(ViewState.VISUAL_SEARCH);
               setVisualSearchScanning(true);
               
-              // Simulate "Scanning" process
               setTimeout(() => {
                   setVisualSearchScanning(false);
                   setSearchPins(generateMockPins(15, "Similar Texture"));
@@ -211,6 +207,15 @@ const App: React.FC = () => {
 
   const handlePinClick = async (pin: Pin) => {
     setSelectedPin(pin);
+  };
+
+  const handleUserClick = (user: User) => {
+      if (user.id === currentUser.id) {
+          navigateTo(ViewState.PROFILE);
+      } else {
+          setViewingUser(user);
+          navigateTo(ViewState.USER_PROFILE);
+      }
   };
 
   const handleSavePin = (pin: Pin, boardId?: string) => {
@@ -255,7 +260,6 @@ const App: React.FC = () => {
       }
   };
 
-  // Modern Navigation Scroll Logic
   const scrollCategories = (direction: 'left' | 'right') => {
       if (categoryScrollRef.current) {
           const scrollAmount = 300;
@@ -276,7 +280,6 @@ const App: React.FC = () => {
       }
   }
 
-  // Content Renderer
   const renderContent = () => {
       if (loading) {
           return (
@@ -296,11 +299,9 @@ const App: React.FC = () => {
           case ViewState.VISUAL_SEARCH:
               return (
                   <div className="flex flex-col items-center w-full animate-in slide-in-from-bottom-10">
-                      {/* Scanning UI */}
                       <div className="relative w-full max-w-2xl aspect-[16/9] mb-12 rounded-[32px] overflow-hidden shadow-2xl group bg-black">
                           {visualSearchImage && <img src={visualSearchImage} className="w-full h-full object-contain opacity-80" />}
                           
-                          {/* Scanning Overlay */}
                           {visualSearchScanning ? (
                               <div className="absolute inset-0 z-10">
                                   <div className="absolute top-0 left-0 w-full h-1 bg-emerald-400 shadow-[0_0_20px_rgba(52,211,153,1)] animate-[scan_2s_ease-in-out_infinite]"></div>
@@ -312,15 +313,10 @@ const App: React.FC = () => {
                               </div>
                           ) : (
                               <div className="absolute inset-0 z-10 p-8">
-                                  {/* Simulated Hotspots */}
                                   <div className="absolute top-1/3 left-1/4 w-4 h-4 bg-white rounded-full animate-ping"></div>
                                   <div className="absolute top-1/3 left-1/4 w-4 h-4 bg-white rounded-full flex items-center justify-center cursor-pointer hover:scale-125 transition">
                                       <div className="w-2 h-2 bg-emerald-600 rounded-full"></div>
                                   </div>
-                                  <div className="absolute top-1/2 right-1/3 w-4 h-4 bg-white rounded-full flex items-center justify-center cursor-pointer hover:scale-125 transition delay-100">
-                                      <div className="w-2 h-2 bg-emerald-600 rounded-full"></div>
-                                  </div>
-
                                   <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur px-6 py-2 rounded-full text-sm font-bold shadow-lg">
                                       We found similar styles
                                   </div>
@@ -328,7 +324,6 @@ const App: React.FC = () => {
                           )}
                       </div>
 
-                      {/* Results */}
                       {!visualSearchScanning && (
                           <div className="w-full">
                               <h2 className="text-2xl font-bold mb-6 px-2">Visual Matches</h2>
@@ -342,6 +337,7 @@ const App: React.FC = () => {
                                         onMoreLikeThis={handleMoreLikeThis} 
                                         onStash={handleAddToStash} 
                                         onTagClick={handleSearch}
+                                        onUserClick={handleUserClick}
                                         boards={boards} 
                                       />
                                   ))}
@@ -359,6 +355,17 @@ const App: React.FC = () => {
                     savedPins={[]} 
                     onCreateBoard={handleCreateBoard}
                     onOpenBoard={(b) => { setSelectedBoard(b); navigateTo(ViewState.BOARD); }}
+                  />
+              );
+          
+          case ViewState.USER_PROFILE:
+              if(!viewingUser) return null;
+              return (
+                  <UserProfile 
+                    user={viewingUser}
+                    pins={generateMockPins(15)} // Simulate that user's pins
+                    onBack={goBack}
+                    onPinClick={handlePinClick}
                   />
               );
 
@@ -404,6 +411,7 @@ const App: React.FC = () => {
                                 onMoreLikeThis={handleMoreLikeThis} 
                                 onStash={handleAddToStash} 
                                 onTagClick={handleSearch}
+                                onUserClick={handleUserClick}
                                 boards={boards} 
                             />
                         ))}
@@ -415,9 +423,7 @@ const App: React.FC = () => {
           default:
               return (
                   <>
-                      {/* Sparks / Stories - Modern Rectangular Cards with NO Scrollbar */}
                       <div className="relative mb-8 mt-4 group/stories">
-                         {/* Navigation Buttons */}
                          <button 
                             className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/60 backdrop-blur-xl rounded-full shadow-lg flex items-center justify-center text-gray-800 opacity-0 group-hover/stories:opacity-100 hover:bg-white hover:scale-110 transition-all duration-300 -ml-2"
                             onClick={() => scrollStories('left')}
@@ -436,7 +442,6 @@ const App: React.FC = () => {
                             className="flex gap-4 px-2 overflow-x-auto [&::-webkit-scrollbar]:hidden py-4 snap-x snap-mandatory"
                             style={{ maskImage: 'linear-gradient(to right, transparent 0%, black 2%, black 98%, transparent 100%)' }}
                          >
-                             {/* Create Spark */}
                              <div className="flex-shrink-0 w-36 h-64 rounded-2xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer group hover:border-emerald-500 hover:bg-emerald-50/30 transition-all snap-start">
                                  <div className="w-14 h-14 rounded-full bg-gray-100 group-hover:bg-emerald-100 text-gray-400 group-hover:text-emerald-600 flex items-center justify-center mb-3 transition-colors shadow-sm">
                                      <Plus size={28} />
@@ -457,7 +462,6 @@ const App: React.FC = () => {
                                      />
                                      <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-transparent to-black/80"></div>
                                      
-                                     {/* Unviewed Ring */}
                                      {!story.viewed && (
                                          <div className="absolute inset-0 ring-4 ring-inset ring-emerald-500/80 rounded-2xl"></div>
                                      )}
@@ -481,7 +485,6 @@ const App: React.FC = () => {
                          </div>
                       </div>
 
-                      {/* Main Masonry Grid */}
                       <div className={`masonry-grid pb-24 animate-in fade-in duration-500 ${isCanvasMode ? 'gap-0 [&_img]:rounded-none [&_div]:rounded-none' : ''} transition-all duration-500`}>
                           {homePins.map(pin => (
                               <PinCard 
@@ -492,6 +495,7 @@ const App: React.FC = () => {
                                 onMoreLikeThis={handleMoreLikeThis} 
                                 onStash={handleAddToStash} 
                                 onTagClick={handleSearch}
+                                onUserClick={handleUserClick}
                                 boards={boards} 
                               />
                           ))}
@@ -515,12 +519,10 @@ const App: React.FC = () => {
         onForward={goForward}
       />
       
-      {/* Integrated Floating Category Navigation - Now flows naturally */}
       {viewState === ViewState.HOME && (
           <div className="w-full z-40 flex justify-center pointer-events-none mt-2">
              <div className="w-full max-w-[1920px] px-4 relative pointer-events-auto group/nav">
                 
-                {/* Modern Navigation Buttons - Only appear on hover/need */}
                 <button 
                     onClick={() => scrollCategories('left')}
                     className="absolute left-6 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/80 backdrop-blur-xl rounded-full shadow-2xl border border-white/50 flex items-center justify-center text-gray-800 hover:bg-black hover:text-white transition-all active:scale-95 opacity-0 group-hover/nav:opacity-100"
@@ -535,7 +537,6 @@ const App: React.FC = () => {
                     <ChevronRight size={24} strokeWidth={2.5} />
                 </button>
 
-                {/* Scroll Container - Hidden Scrollbar */}
                 <div 
                     ref={categoryScrollRef}
                     className="flex items-center gap-3 overflow-x-auto [&::-webkit-scrollbar]:hidden px-2 py-3 scroll-smooth mask-linear-fade"
@@ -569,7 +570,6 @@ const App: React.FC = () => {
         {renderContent()}
       </main>
 
-      {/* Innovation: STASH DRAWER */}
       <div className={`fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-2xl border-t border-gray-200 shadow-[0_-10px_60px_rgba(0,0,0,0.15)] transition-transform duration-500 ease-in-out ${showStash ? 'translate-y-0' : 'translate-y-full'}`}>
           <div 
              className="absolute -top-12 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-8 py-3 rounded-t-3xl cursor-pointer flex items-center gap-3 font-bold shadow-2xl hover:pb-5 transition-all"
@@ -611,7 +611,6 @@ const App: React.FC = () => {
           </div>
       </div>
 
-      {/* Innovation: CREATIVE STUDIO DOCK */}
       <div 
         className="fixed bottom-8 right-8 z-40 flex flex-col items-end gap-3"
         onMouseEnter={() => setShowCreativeDock(true)}
@@ -619,6 +618,14 @@ const App: React.FC = () => {
       >
          
          <div className={`flex flex-col gap-3 items-end transition-all duration-300 ${showCreativeDock ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}>
+             <button 
+                className="p-4 bg-white rounded-full shadow-xl text-gray-800 hover:text-emerald-600 transition-all duration-300 flex items-center gap-3 pr-6 hover:scale-105"
+                onClick={() => setIsSettingsOpen(true)}
+             >
+                <SettingsIcon size={22} />
+                <span className="font-bold">Settings</span>
+            </button>
+
             <button 
                 className={`p-4 rounded-full shadow-xl transition-all duration-300 flex items-center gap-3 pr-6 hover:scale-105
                     ${isCanvasMode ? 'bg-black text-emerald-400 ring-2 ring-emerald-500' : 'bg-white text-gray-800'}`}
@@ -637,7 +644,6 @@ const App: React.FC = () => {
             </button>
          </div>
 
-         {/* Main FAB */}
          <button 
             className={`w-16 h-16 rounded-full shadow-2xl flex items-center justify-center transition-all duration-500 hover:scale-110 z-50
                 ${showCreativeDock ? 'bg-black text-white rotate-90' : 'bg-white text-black'}`}
@@ -653,18 +659,26 @@ const App: React.FC = () => {
           relatedPins={generateMockPins(10, selectedPin.tags[0])}
           boards={boards}
           onTagClick={handleSearch}
+          onUserClick={handleUserClick}
         />
       )}
 
-      {/* Story Viewer Overlay */}
       {activeStoryIndex !== null && (
           <StoryViewer 
             initialIndex={activeStoryIndex}
             stories={stories}
             onClose={() => setActiveStoryIndex(null)}
+            onUserClick={handleUserClick}
           />
       )}
       
+      {isSettingsOpen && (
+          <SettingsModal 
+            user={currentUser} 
+            onClose={() => setIsSettingsOpen(false)} 
+          />
+      )}
+
       <style>{`
         @keyframes scan {
           0% { top: 0%; opacity: 0; }

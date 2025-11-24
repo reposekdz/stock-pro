@@ -1,6 +1,8 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Bell, MessageCircle, User as UserIcon, X, Camera, ArrowLeft, ArrowRight, Eye, Sparkles } from 'lucide-react';
+import { Search, Bell, MessageCircle, User as UserIcon, X, Camera, ArrowLeft, ArrowRight, Eye, Sparkles, Settings, Heart, UserPlus } from 'lucide-react';
 import { getSearchSuggestions } from '../services/geminiService';
+import { Notification } from '../types';
 
 interface HeaderProps {
   onSearch: (query: string) => void;
@@ -20,13 +22,8 @@ const InteractiveLogo = ({ onClick }: { onClick: () => void }) => {
       className="relative w-12 h-12 flex items-center justify-center cursor-pointer group select-none"
       onClick={onClick}
     >
-      {/* Animated Background - Emerald/Teal Gradient */}
       <div className="absolute inset-0 bg-black rounded-full transition-all duration-500 ease-out group-hover:scale-110 group-hover:rotate-180 group-hover:bg-gradient-to-br group-hover:from-emerald-400 group-hover:to-teal-600 shadow-lg shadow-emerald-200/50"></div>
-      
-      {/* Inner Ring */}
       <div className="absolute inset-1 border-2 border-white/30 rounded-full scale-0 group-hover:scale-100 transition-transform duration-500 delay-75"></div>
-      
-      {/* Letter */}
       <div className="relative z-10 text-white font-black text-2xl tracking-tighter group-hover:scale-125 transition-transform duration-300">
         S
         <span className="absolute -top-1 -right-2 w-2.5 h-2.5 bg-lime-300 rounded-full border border-emerald-600 opacity-0 group-hover:opacity-100 transition-all duration-300 animate-pulse shadow-glow"></span>
@@ -34,6 +31,13 @@ const InteractiveLogo = ({ onClick }: { onClick: () => void }) => {
     </div>
   );
 };
+
+// Mock Notifications
+const MOCK_NOTIFICATIONS: Notification[] = [
+    { id: '1', type: 'like', text: 'liked your pin "Neon City"', user: { id: 'u1', username: 'Sarah', avatarUrl: 'https://picsum.photos/seed/u1/50/50', followers: 0, following: 0}, timestamp: '2m', read: false, imageUrl: 'https://picsum.photos/seed/neon/50/50' },
+    { id: '2', type: 'follow', text: 'started following you', user: { id: 'u2', username: 'DesignDaily', avatarUrl: 'https://picsum.photos/seed/u2/50/50', followers: 0, following: 0}, timestamp: '1h', read: false },
+    { id: '3', type: 'comment', text: 'commented: "Amazing work!"', user: { id: 'u3', username: 'Mike_Art', avatarUrl: 'https://picsum.photos/seed/u3/50/50', followers: 0, following: 0}, timestamp: '3h', read: true, imageUrl: 'https://picsum.photos/seed/art/50/50' },
+];
 
 export const Header: React.FC<HeaderProps> = ({ 
     onSearch, 
@@ -49,8 +53,10 @@ export const Header: React.FC<HeaderProps> = ({
   const [searchValue, setSearchValue] = useState(currentQuery || '');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [zenMode, setZenMode] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const notifRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -61,6 +67,9 @@ export const Header: React.FC<HeaderProps> = ({
       const handleClickOutside = (event: MouseEvent) => {
           if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
               setShowSuggestions(false);
+          }
+          if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+              setShowNotifications(false);
           }
       };
       document.addEventListener('mousedown', handleClickOutside);
@@ -87,7 +96,6 @@ export const Header: React.FC<HeaderProps> = ({
       }
   }
 
-  // Toggle Zen Mode (Hides UI elements for pure viewing)
   const toggleZenMode = () => {
       setZenMode(!zenMode);
       document.body.classList.toggle('zen-mode');
@@ -98,10 +106,8 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="max-w-[1920px] mx-auto bg-white/80 backdrop-blur-2xl rounded-full px-3 py-3 shadow-[0_8px_32px_rgba(0,0,0,0.08)] border border-white/50 flex items-center justify-between gap-3 md:gap-4 relative overflow-visible z-50">
         
         <div className="flex items-center gap-4 pl-1">
-          {/* Interactive Logo */}
           <InteractiveLogo onClick={onHomeClick} />
 
-          {/* Modern Gradient Navigation Arrows */}
           <div className="hidden md:flex items-center gap-2">
               <button 
                   onClick={onBack}
@@ -127,7 +133,6 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Search Bar */}
         <div className="flex-1 relative group max-w-2xl mx-auto" ref={searchRef}>
           <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none group-focus-within:text-black transition-colors">
             <Search size={20} />
@@ -142,7 +147,6 @@ export const Header: React.FC<HeaderProps> = ({
             onKeyDown={handleKeyDown}
           />
           
-          {/* Visual Search & Clear Icons */}
           <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
               {searchValue && (
                   <button 
@@ -168,7 +172,6 @@ export const Header: React.FC<HeaderProps> = ({
               />
           </div>
 
-          {/* Search Suggestions Dropdown */}
           {showSuggestions && (
               <div className="absolute top-full left-0 right-0 mt-4 bg-white/95 backdrop-blur-3xl rounded-[32px] shadow-[0_30px_60px_rgba(0,0,0,0.15)] border border-white/50 overflow-hidden py-4 animate-in fade-in slide-in-from-top-4 duration-300 z-[100]">
                   <div className="flex items-center justify-between px-6 pb-2 border-b border-gray-100/50">
@@ -199,9 +202,7 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </div>
 
-        {/* Icons */}
         <div className="flex items-center gap-1 md:gap-2 text-gray-500 pr-1">
-           {/* Zen Mode Toggle */}
            <button 
               className={`p-3 rounded-full relative transition-all duration-300 hover:scale-110 active:scale-95 hidden lg:block
                 ${zenMode ? 'bg-emerald-100 text-emerald-600 shadow-inner' : 'hover:bg-gray-100 text-gray-500'}`}
@@ -211,10 +212,41 @@ export const Header: React.FC<HeaderProps> = ({
              <Eye size={22} />
           </button>
 
-          <button className="p-3 hover:bg-gray-100 rounded-full relative hidden sm:block transition-transform hover:scale-110 active:scale-95 hover:text-black">
-            <Bell size={22} />
-            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white animate-pulse"></span>
-          </button>
+          {/* Notifications */}
+          <div className="relative" ref={notifRef}>
+            <button 
+                className={`p-3 rounded-full relative transition-transform hover:scale-110 active:scale-95 hover:text-black
+                ${showNotifications ? 'bg-black text-white' : 'hover:bg-gray-100'}`}
+                onClick={() => setShowNotifications(!showNotifications)}
+            >
+                <Bell size={22} />
+                <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white animate-pulse"></span>
+            </button>
+            
+            {showNotifications && (
+                <div className="absolute top-full right-0 mt-4 w-80 bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden z-[100] animate-in slide-in-from-top-2">
+                    <div className="px-6 py-4 border-b border-gray-50 flex justify-between items-center">
+                        <h3 className="font-bold text-gray-900">Notifications</h3>
+                        <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">3 New</span>
+                    </div>
+                    <div className="max-h-80 overflow-y-auto">
+                        {MOCK_NOTIFICATIONS.map(n => (
+                            <div key={n.id} className="px-6 py-4 hover:bg-gray-50 flex gap-3 transition-colors cursor-pointer border-b border-gray-50 last:border-0 relative">
+                                <img src={n.user.avatarUrl} className="w-10 h-10 rounded-full border border-gray-100" />
+                                <div className="flex-1">
+                                    <p className="text-sm text-gray-800">
+                                        <span className="font-bold text-gray-900">{n.user.username}</span> {n.text}
+                                    </p>
+                                    <p className="text-xs text-gray-400 mt-1 font-medium">{n.timestamp}</p>
+                                </div>
+                                {n.imageUrl && <img src={n.imageUrl} className="w-10 h-10 rounded-lg object-cover" />}
+                                {!n.read && <div className="absolute right-4 top-1/2 -translate-y-1/2 w-2 h-2 bg-emerald-500 rounded-full"></div>}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+          </div>
           
           <button className="p-3 hover:bg-gray-100 rounded-full hidden sm:block transition-transform hover:scale-110 active:scale-95 hover:text-black">
             <MessageCircle size={22} />
@@ -224,7 +256,7 @@ export const Header: React.FC<HeaderProps> = ({
               className="p-1 hover:bg-gray-100 rounded-full transition-transform hover:scale-105 active:scale-95 ml-1"
               onClick={onProfileClick}
           >
-            <div className="w-11 h-11 rounded-full bg-gray-200 p-[2px] shadow-lg">
+            <div className="w-11 h-11 rounded-full bg-gray-200 p-[2px] shadow-lg group">
                <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
                   <UserIcon size={22} className="text-gray-700" />
                </div>
@@ -233,7 +265,6 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
       
-      {/* Zen Mode Exit Button (Floating) */}
       {zenMode && (
          <button 
             className="fixed top-6 right-6 z-[60] bg-black/80 text-white px-6 py-3 rounded-full backdrop-blur-md shadow-2xl hover:bg-black transition cursor-pointer pointer-events-auto font-bold animate-in fade-in slide-in-from-top-4"

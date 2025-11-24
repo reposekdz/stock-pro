@@ -1,6 +1,7 @@
+
 import React, { useState, useRef, MouseEvent } from 'react';
 import { Share2, MoreHorizontal, ChevronDown, Check, ScanSearch, Archive, Heart, Hash, Eye, TrendingUp, Wand2 } from 'lucide-react';
-import { Pin, Board } from '../types';
+import { Pin, Board, User } from '../types';
 
 interface PinCardProps {
   pin: Pin;
@@ -9,10 +10,11 @@ interface PinCardProps {
   onMoreLikeThis: (pin: Pin) => void;
   onStash: (pin: Pin) => void;
   onTagClick: (tag: string) => void;
+  onUserClick?: (user: User) => void; // Added onUserClick prop
   boards: Board[];
 }
 
-export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLikeThis, onStash, onTagClick, boards }) => {
+export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLikeThis, onStash, onTagClick, onUserClick, boards }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [showBoardSelect, setShowBoardSelect] = useState(false);
@@ -20,7 +22,6 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
   const [isPeeking, setIsPeeking] = useState(false);
   const [isRemixing, setIsRemixing] = useState(false);
   
-  // 3D Tilt & Peek State
   const cardRef = useRef<HTMLDivElement>(null);
   const peekTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [rotation, setRotation] = useState({ x: 0, y: 0 });
@@ -68,10 +69,9 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
   const handleRemixClick = (e: React.MouseEvent) => {
       e.stopPropagation();
       setIsRemixing(true);
-      setTimeout(() => setIsRemixing(false), 2000); // Simulate AI loading
+      setTimeout(() => setIsRemixing(false), 2000); 
   }
 
-  // Double Click to Like Innovation
   const handleDoubleClick = (e: React.MouseEvent) => {
       e.stopPropagation();
       setShowHeart(true);
@@ -79,7 +79,12 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
       setTimeout(() => setShowHeart(false), 1000);
   }
 
-  // 3D Tilt Logic
+  // Handle Author Click
+  const handleAuthorClick = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if(onUserClick) onUserClick(pin.author);
+  }
+
   const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
       if (!cardRef.current || isPeeking) return;
       
@@ -90,7 +95,7 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
       const centerX = rect.width / 2;
       const centerY = rect.height / 2;
       
-      const rotateX = ((y - centerY) / centerY) * -2; // Subtle tilt
+      const rotateX = ((y - centerY) / centerY) * -2; 
       const rotateY = ((x - centerX) / centerX) * 2;
 
       setRotation({ x: rotateX, y: rotateY });
@@ -98,7 +103,6 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
 
   const handleMouseEnter = () => {
       setIsHovered(true);
-      // Innovation: Hold to Peek
       peekTimeout.current = setTimeout(() => {
           setIsPeeking(true);
       }, 800); 
@@ -132,7 +136,6 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
             transformStyle: 'preserve-3d'
         }}
       >
-          {/* AI Remix Overlay */}
           {isRemixing && (
              <div className="absolute inset-0 z-40 bg-black/80 backdrop-blur-md flex flex-col items-center justify-center text-white animate-in fade-in">
                  <Wand2 size={48} className="animate-spin mb-4 text-emerald-400" />
@@ -151,12 +154,10 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
             loading="lazy"
           />
           
-          {/* Double Click Heart Animation */}
           <div className={`absolute inset-0 flex items-center justify-center pointer-events-none z-30 transition-all duration-300 ${showHeart ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}`}>
              <Heart size={80} className="fill-emerald-500 text-emerald-500 drop-shadow-2xl animate-bounce" />
           </div>
 
-          {/* Peek Overlay (Stats) - Appears on Long Hover */}
           <div className={`absolute inset-0 bg-black/60 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-white transition-all duration-500 ${isPeeking ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
              <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center mb-4 border border-white/20">
                 <Eye size={28} className="text-emerald-400" />
@@ -174,21 +175,17 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
              </div>
           </div>
 
-          {/* Standard Overlay - Visible on Hover */}
           <div 
             className={`absolute inset-0 flex flex-col justify-between p-4 transition-opacity duration-300 ${isHovered && !isPeeking ? 'opacity-100' : 'opacity-0'}`}
           >
               
-              {/* Top Section */}
               <div className="flex justify-between items-start relative z-20 translate-z-20" style={{ transform: 'translateZ(20px)' }}>
                  
-                 {/* Board Indicator */}
                  <div className="text-white drop-shadow-md font-bold text-sm flex items-center opacity-0 group-hover:opacity-100 transition-all delay-100 translate-y-[-10px] group-hover:translate-y-0 bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
                      <span className="max-w-[100px] truncate">{selectedBoard?.title || 'Profile'}</span>
                      <ChevronDown size={14} className="ml-1" />
                  </div>
 
-                 {/* Split Quick Save Button */}
                  <div className="relative flex items-center shadow-2xl rounded-full overflow-hidden transition-transform active:scale-95 group-hover:translate-y-0 translate-y-[-10px] ring-1 ring-white/20">
                     <button 
                       className={`px-4 py-3 font-bold text-sm transition-all duration-300 flex items-center gap-2
@@ -209,7 +206,6 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
                         <ChevronDown size={16} />
                     </button>
 
-                    {/* Dropdown Menu */}
                     {showBoardSelect && (
                         <div className="absolute top-full right-0 mt-3 bg-white rounded-2xl shadow-2xl py-2 w-60 z-50 animate-in fade-in slide-in-from-top-2 border border-gray-100">
                             <div className="px-4 py-2 border-b border-gray-100">
@@ -232,7 +228,6 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
                  </div>
               </div>
 
-              {/* Middle - Innovation Actions */}
               <div 
                   className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col gap-3 scale-0 group-hover:scale-100 transition-transform duration-300 delay-100"
                   style={{ transform: 'translate(-50%, -50%) translateZ(30px)' }}
@@ -253,7 +248,6 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
                             <Archive size={22} />
                         </button>
                     </div>
-                    {/* Innovation: AI Remix Button */}
                     <button 
                         onClick={handleRemixClick}
                         className="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full text-white font-bold text-xs shadow-lg hover:scale-105 transition-all border border-white/20"
@@ -262,24 +256,18 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
                     </button>
               </div>
 
-              {/* Bottom Section */}
               <div 
                   className="flex flex-col gap-3 translate-y-4 group-hover:translate-y-0 transition-transform duration-300 delay-75"
                   style={{ transform: 'translateZ(20px)' }}
                >
                  <div className="flex justify-between items-end gap-2">
-                    {/* Interactive Tags */}
-                    <div className="flex flex-wrap gap-1.5 max-w-[75%]">
-                        {pin.tags.slice(0, 2).map((tag, idx) => (
-                            <button
-                                key={idx}
-                                onClick={(e) => handleTagClick(e, tag)}
-                                className="px-3 py-1.5 bg-white/90 backdrop-blur-md rounded-full text-[11px] font-bold text-gray-800 hover:bg-black hover:text-white transition-all shadow-sm active:scale-95"
-                            >
-                                #{tag}
-                            </button>
-                        ))}
-                    </div>
+                    <button 
+                        className="flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full hover:bg-white hover:text-black text-white transition-colors"
+                        onClick={handleAuthorClick}
+                    >
+                        <img src={pin.author.avatarUrl} className="w-5 h-5 rounded-full border border-white/50" alt="" />
+                        <span className="text-[10px] font-bold max-w-[80px] truncate">{pin.author.username}</span>
+                    </button>
 
                     <div className="flex gap-2">
                         <button className="bg-white/90 backdrop-blur-xl p-2.5 rounded-full hover:bg-white text-black shadow-lg transition-all hover:scale-110">

@@ -1,18 +1,20 @@
+
 import React, { useEffect, useState } from 'react';
 import { X, MoreHorizontal, Share2, BadgeCheck, Heart, Smile, ChevronDown, Download, Maximize2, Crop, Sparkles } from 'lucide-react';
-import { Pin, Comment, Board } from '../types';
+import { Pin, Comment, Board, User } from '../types';
 import { generateRelatedComments } from '../services/geminiService';
 import { PinCard } from './PinCard';
 
 interface PinDetailProps {
   pin: Pin;
   onClose: () => void;
-  relatedPins: Pin[]; // Passed for the related grid
+  relatedPins: Pin[]; 
   boards: Board[];
   onTagClick: (tag: string) => void;
+  onUserClick?: (user: User) => void; // Added onUserClick
 }
 
-export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins, boards, onTagClick }) => {
+export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins, boards, onTagClick, onUserClick }) => {
   const [comments, setComments] = useState<Comment[]>(pin.comments || []);
   const [loadingComments, setLoadingComments] = useState(false);
   const [newComment, setNewComment] = useState("");
@@ -46,10 +48,16 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
     };
   }, [pin.id]);
 
+  const handleAuthorClick = () => {
+      if(onUserClick) {
+          onClose(); // Close modal first
+          onUserClick(pin.author);
+      }
+  }
+
   return (
     <div className="fixed inset-0 z-[100] bg-white flex flex-col md:flex-row animate-in fade-in duration-200">
         
-        {/* CLOSE BUTTON - Fixed */}
         <button 
             className="fixed top-6 left-6 z-[110] p-3 bg-white/10 backdrop-blur-md border border-white/20 text-white rounded-full hover:bg-white hover:text-black hover:border-white transition-all duration-300 shadow-xl"
             onClick={onClose}
@@ -57,9 +65,7 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
             <X size={24} />
         </button>
 
-        {/* LEFT: Immersive Media Side (Scrollable on mobile, Fixed on desktop) */}
         <div className="w-full md:w-[60%] lg:w-[65%] h-[50vh] md:h-full bg-black flex items-center justify-center relative group overflow-hidden">
-            {/* Ambient Background */}
             <div 
                 className="absolute inset-0 opacity-30 blur-3xl scale-110"
                 style={{ backgroundImage: `url(${pin.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
@@ -72,7 +78,6 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
                     className={`max-w-full max-h-[90vh] object-contain transition-all duration-500 ${isCropMode ? 'scale-90 opacity-50 cursor-crosshair' : ''}`}
                 />
                 
-                {/* Simulated Crop Box */}
                 {isCropMode && (
                     <div className="absolute w-64 h-64 border-2 border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.7)] flex items-center justify-center">
                          <div className="text-white font-bold bg-black/50 px-3 py-1 rounded-full text-sm">Select Area</div>
@@ -84,7 +89,6 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
                 )}
             </div>
 
-            {/* Floating Actions on Media */}
             <div className="absolute bottom-8 right-8 z-20 flex flex-col gap-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 <button 
                     className={`p-4 rounded-full text-white transition shadow-lg border border-white/10 ${isCropMode ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-white/10 backdrop-blur-md hover:bg-white hover:text-black'}`}
@@ -102,10 +106,8 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
             </div>
         </div>
 
-        {/* RIGHT: Interaction Side (Scrollable) */}
         <div className="w-full md:w-[40%] lg:w-[35%] h-full flex flex-col bg-white overflow-y-auto relative scrollbar-thin">
             
-            {/* Sticky Header */}
             <div className="sticky top-0 bg-white/95 backdrop-blur-xl z-30 p-6 flex justify-between items-center border-b border-gray-100">
                 <div className="flex gap-2">
                     <button className="p-3 hover:bg-gray-100 rounded-full text-gray-600 hover:text-black transition"><MoreHorizontal size={24}/></button>
@@ -118,7 +120,6 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
             </div>
 
             <div className="p-8">
-                {/* Innovation: Match Score & Verification (Replaced Source URL) */}
                 <div className="flex items-center gap-4 mb-6">
                     <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
                         <Sparkles size={12} /> 98% Visual Match
@@ -131,7 +132,6 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
                 <h1 className="text-4xl font-extrabold mb-4 text-gray-900 leading-tight">{pin.title}</h1>
                 <p className="text-gray-600 text-lg mb-8 leading-relaxed">{pin.description}</p>
 
-                {/* Tags in Detail View */}
                 <div className="flex flex-wrap gap-2 mb-8">
                     {pin.tags.map((tag, i) => (
                         <button 
@@ -145,7 +145,10 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
                 </div>
 
                 {/* Author Card */}
-                <div className="flex items-center gap-4 mb-8 p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-emerald-200 transition-colors cursor-pointer group">
+                <div 
+                    onClick={handleAuthorClick}
+                    className="flex items-center gap-4 mb-8 p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-emerald-200 transition-colors cursor-pointer group"
+                >
                     <img src={pin.author.avatarUrl} alt={pin.author.username} className="w-14 h-14 rounded-full border border-white shadow-sm" />
                     <div className="flex-1">
                         <div className="flex items-center gap-1">
@@ -154,10 +157,9 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
                         </div>
                         <p className="text-sm text-gray-500">{pin.author.followers.toLocaleString()} followers</p>
                     </div>
-                    <button className="px-6 py-2 bg-gray-200 rounded-full font-bold hover:bg-black hover:text-white transition">Follow</button>
+                    <button className="px-6 py-2 bg-gray-200 rounded-full font-bold hover:bg-black hover:text-white transition group-hover:bg-emerald-600 group-hover:text-white">Follow</button>
                 </div>
 
-                {/* Comments */}
                 <div className="mb-12">
                     <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
                         {comments.length} Comments <ChevronDown size={18} />
@@ -175,10 +177,20 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
                         <div className="space-y-6">
                             {comments.map((comment) => (
                                 <div key={comment.id} className="flex gap-3 group">
-                                    <img src={comment.user.avatarUrl} className="w-10 h-10 rounded-full flex-shrink-0" alt="u"/>
+                                    <img 
+                                        src={comment.user.avatarUrl} 
+                                        className="w-10 h-10 rounded-full flex-shrink-0 cursor-pointer hover:opacity-80" 
+                                        alt="u"
+                                        onClick={() => onUserClick && onUserClick(comment.user)}
+                                    />
                                     <div className="flex flex-col flex-1">
                                         <div className="bg-gray-50 px-4 py-2 rounded-2xl rounded-tl-none inline-block self-start">
-                                            <span className="font-bold text-gray-900 mr-2 block text-xs mb-0.5">{comment.user.username}</span>
+                                            <span 
+                                                className="font-bold text-gray-900 mr-2 block text-xs mb-0.5 cursor-pointer hover:underline"
+                                                onClick={() => onUserClick && onUserClick(comment.user)}
+                                            >
+                                                {comment.user.username}
+                                            </span>
                                             <span className="text-gray-800 text-sm">{comment.text}</span>
                                         </div>
                                         <div className="flex gap-4 text-xs text-gray-500 mt-1 ml-2 font-semibold">
@@ -194,7 +206,6 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
                 </div>
             </div>
 
-            {/* Comment Input */}
             <div className="sticky bottom-0 bg-white p-4 border-t border-gray-100 z-30">
                 <div className="flex items-center gap-2 mb-3 justify-start overflow-x-auto pb-2 scrollbar-hide px-2">
                     <span className="text-xs font-bold text-gray-400 mr-2">Quick react:</span>
@@ -217,7 +228,6 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
                 </div>
             </div>
 
-            {/* Related Content Area */}
             <div className="bg-gray-50 p-6 border-t border-gray-200">
                 <h2 className="text-xl font-bold mb-6">More like this</h2>
                 <div className="grid grid-cols-2 gap-4">
@@ -231,6 +241,7 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
                                 onStash={() => {}}
                                 onTagClick={onTagClick}
                                 boards={boards} 
+                                onUserClick={onUserClick}
                             />
                         </div>
                     ))}
