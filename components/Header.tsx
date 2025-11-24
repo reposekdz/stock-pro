@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Bell, MessageCircle, User as UserIcon, X, Camera, ArrowLeft, ArrowRight, Eye, Sparkles, Settings, Heart, UserPlus } from 'lucide-react';
+import { Search, Bell, MessageCircle, User as UserIcon, X, Camera, ArrowLeft, ArrowRight, Eye, Sparkles, Settings, Heart, UserPlus, Plus } from 'lucide-react';
 import { getSearchSuggestions } from '../services/geminiService';
 import { Notification } from '../types';
 
@@ -14,6 +14,7 @@ interface HeaderProps {
   canGoForward: boolean;
   onBack: () => void;
   onForward: () => void;
+  onCreateClick: () => void;
 }
 
 const InteractiveLogo = ({ onClick }: { onClick: () => void }) => {
@@ -48,7 +49,8 @@ export const Header: React.FC<HeaderProps> = ({
     canGoBack,
     canGoForward,
     onBack,
-    onForward
+    onForward,
+    onCreateClick
 }) => {
   const [searchValue, setSearchValue] = useState(currentQuery || '');
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -210,6 +212,15 @@ export const Header: React.FC<HeaderProps> = ({
               title="Toggle Zen Mode"
             >
              <Eye size={22} />
+          </button>
+
+           <button 
+              className="p-3 bg-black text-white rounded-full transition-all duration-300 hover:scale-110 hover:shadow-lg active:scale-95 flex items-center gap-2"
+              onClick={onCreateClick}
+              title="Create"
+            >
+             <Plus size={22} strokeWidth={3} />
+             <span className="hidden xl:inline text-sm font-bold">Create</span>
           </button>
 
           {/* Notifications */}

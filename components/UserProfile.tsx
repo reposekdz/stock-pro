@@ -13,7 +13,13 @@ interface UserProfileProps {
 
 export const UserProfile: React.FC<UserProfileProps> = ({ user, pins, onBack, onPinClick }) => {
     const [isFollowing, setIsFollowing] = useState(false);
+    const [followerCount, setFollowerCount] = useState(user.followers);
     const [activeTab, setActiveTab] = useState<'created' | 'saved'>('created');
+
+    const handleFollowToggle = () => {
+        setIsFollowing(!isFollowing);
+        setFollowerCount(prev => isFollowing ? prev - 1 : prev + 1);
+    };
 
     return (
         <div className="flex flex-col w-full animate-in fade-in duration-500">
@@ -49,7 +55,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ user, pins, onBack, on
 
                     <div className="flex gap-4 text-sm font-bold text-gray-900 mb-8">
                         <div className="text-center cursor-pointer hover:text-emerald-600">
-                            <span className="block text-xl">{user.followers.toLocaleString()}</span>
+                            <span className="block text-xl transition-all duration-300">{followerCount.toLocaleString()}</span>
                             <span className="text-gray-500 font-normal">followers</span>
                         </div>
                         <div className="text-center cursor-pointer hover:text-emerald-600">
@@ -64,9 +70,11 @@ export const UserProfile: React.FC<UserProfileProps> = ({ user, pins, onBack, on
 
                     <div className="flex gap-3 mb-12">
                         <button 
-                            onClick={() => setIsFollowing(!isFollowing)}
-                            className={`px-8 py-3 rounded-full font-bold transition-all shadow-md active:scale-95 flex items-center gap-2
-                                ${isFollowing ? 'bg-black text-white' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}`}
+                            onClick={handleFollowToggle}
+                            className={`px-8 py-3 rounded-full font-bold transition-all shadow-md active:scale-95 flex items-center gap-2 border
+                                ${isFollowing 
+                                    ? 'bg-transparent text-gray-900 border-gray-300 hover:bg-gray-50' 
+                                    : 'bg-emerald-600 hover:bg-emerald-700 text-white border-transparent'}`}
                         >
                             {isFollowing ? (
                                 <>Following <Check size={18} /></>

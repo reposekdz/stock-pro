@@ -8,9 +8,11 @@ import { UserProfile } from './components/UserProfile';
 import { SettingsModal } from './components/SettingsModal';
 import { BoardDetail } from './components/BoardDetail';
 import { StoryViewer } from './components/StoryViewer';
+import { CreateModal } from './components/CreateModal';
 import { Pin, User, Board, ViewState, Filter, Story } from './types';
 import { generatePinDetails, getPersonalizedTopics } from './services/geminiService';
 import { Wand2, Plus, SlidersHorizontal, ArrowUp, ScanLine, Loader2, Archive, X, ArrowRight, Zap, Play, ChevronLeft, ChevronRight, Palette, Layout, Sparkles, RefreshCw, Layers, Settings as SettingsIcon } from 'lucide-react';
+import confetti from 'canvas-confetti';
 
 const DEFAULT_TOPICS = [
   "Eco Brutalism", "Neon Cyberpunk", "Sustainable Fashion", "Parametric Architecture", 
@@ -131,6 +133,7 @@ const App: React.FC = () => {
   // New States for Profile Viewing and Settings
   const [viewingUser, setViewingUser] = useState<User | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   
   const [activeStoryIndex, setActiveStoryIndex] = useState<number | null>(null);
 
@@ -258,6 +261,25 @@ const App: React.FC = () => {
           setStash(prev => [...prev, pin]);
           setShowStash(true);
       }
+  };
+
+  const handleCreatePin = (newPin: Pin) => {
+      setHomePins(prev => [newPin, ...prev]);
+      confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 }
+      });
+  };
+
+  const handleCreateStory = (newStory: Story) => {
+      setStories(prev => [newStory, ...prev]);
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#34d399', '#10b981']
+      });
   };
 
   const scrollCategories = (direction: 'left' | 'right') => {
@@ -442,7 +464,10 @@ const App: React.FC = () => {
                             className="flex gap-4 px-2 overflow-x-auto [&::-webkit-scrollbar]:hidden py-4 snap-x snap-mandatory"
                             style={{ maskImage: 'linear-gradient(to right, transparent 0%, black 2%, black 98%, transparent 100%)' }}
                          >
-                             <div className="flex-shrink-0 w-36 h-64 rounded-2xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer group hover:border-emerald-500 hover:bg-emerald-50/30 transition-all snap-start">
+                             <div 
+                                onClick={() => setIsCreateModalOpen(true)}
+                                className="flex-shrink-0 w-36 h-64 rounded-2xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer group hover:border-emerald-500 hover:bg-emerald-50/30 transition-all snap-start"
+                             >
                                  <div className="w-14 h-14 rounded-full bg-gray-100 group-hover:bg-emerald-100 text-gray-400 group-hover:text-emerald-600 flex items-center justify-center mb-3 transition-colors shadow-sm">
                                      <Plus size={28} />
                                  </div>
@@ -517,6 +542,7 @@ const App: React.FC = () => {
         canGoForward={historyIndex < historyStack.length - 1}
         onBack={goBack}
         onForward={goForward}
+        onCreateClick={() => setIsCreateModalOpen(true)}
       />
       
       {viewState === ViewState.HOME && (
@@ -672,6 +698,15 @@ const App: React.FC = () => {
           />
       )}
       
+      {isCreateModalOpen && (
+          <CreateModal 
+            onClose={() => setIsCreateModalOpen(false)}
+            onCreatePin={handleCreatePin}
+            onCreateStory={handleCreateStory}
+            user={currentUser}
+          />
+      )}
+
       {isSettingsOpen && (
           <SettingsModal 
             user={currentUser} 
