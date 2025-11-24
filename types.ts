@@ -10,6 +10,11 @@ export interface User {
   isCreator?: boolean;
   location?: string;
   links?: { label: string; url: string }[];
+  monetizationEligibility?: {
+      watchHours: number;
+      requiredWatchHours: number;
+      eligible: boolean;
+  };
 }
 
 export interface Collaborator extends User {
@@ -42,6 +47,12 @@ export interface Product {
     affiliateLink: string;
 }
 
+export interface MonetizationSettings {
+    adsEnabled: boolean;
+    isSubscriberOnly: boolean;
+    estimatedEarnings?: number;
+}
+
 export interface Pin {
   id: string;
   title: string;
@@ -58,6 +69,13 @@ export interface Pin {
   editSettings?: ImageEditSettings;
   taggedProducts?: Product[];
   isExclusive?: boolean; // For subscribers
+  
+  // Video & Monetization Fields
+  type: 'image' | 'video';
+  videoUrl?: string;
+  duration?: string; // e.g. "0:45"
+  monetization?: MonetizationSettings;
+  viewCount?: number;
 }
 
 export interface Board {
@@ -85,6 +103,7 @@ export interface Story {
   videoUrl?: string;
   duration?: number;
   products?: Product[];
+  isExclusive?: boolean;
 }
 
 export interface Notification {

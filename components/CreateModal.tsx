@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Upload, Image as ImageIcon, Sparkles, Video, Check, Loader2, Wand2, Plus, Sliders, Sun, Contrast, Droplet, MapPin, Calendar, Tag, Mic, ChevronDown, Save, Type, Sticker, Music, AlignCenter, Layout, Move, RotateCw, Crop, Smartphone, Layers, GripHorizontal, Palette, Share2, MousePointer2, Scissors, FastForward, PlayCircle, PauseCircle, Film, ShoppingBag, DollarSign, Lock, Trash2, Type as TypeIcon, Circle, Square } from 'lucide-react';
+import { X, Upload, Image as ImageIcon, Sparkles, Video, Check, Loader2, Wand2, Plus, Sliders, Sun, Contrast, Droplet, MapPin, Calendar, Tag, Mic, ChevronDown, Save, Type, Sticker, Music, AlignCenter, Layout, Move, RotateCw, Crop, Smartphone, Layers, GripHorizontal, Palette, Share2, MousePointer2, Scissors, FastForward, PlayCircle, PauseCircle, Film, ShoppingBag, DollarSign, Lock, Trash2, Type as TypeIcon, Circle, Square, Subtitles, Play } from 'lucide-react';
 import { User, Pin, Story, Board, ImageEditSettings, Product } from '../types';
 
 interface CreateModalProps {
@@ -23,14 +23,6 @@ interface CanvasItem {
     rotation: number;
     scale: number;
 }
-
-const AI_STYLES = [
-    { id: 'realistic', label: 'Realistic', color: 'from-blue-400 to-indigo-500' },
-    { id: 'cyberpunk', label: 'Cyberpunk', color: 'from-pink-500 to-rose-500' },
-    { id: 'watercolor', label: 'Watercolor', color: 'from-emerald-400 to-teal-500' },
-    { id: '3d-render', label: '3D Render', color: 'from-purple-500 to-violet-500' },
-    { id: 'anime', label: 'Anime', color: 'from-orange-400 to-amber-500' },
-];
 
 const FILTERS = [
     { id: 'none', label: 'Normal', style: '' },
@@ -68,7 +60,6 @@ export const CreateModal: React.FC<CreateModalProps> = ({ onClose, onCreatePin, 
     // AI State
     const [aiPrompt, setAiPrompt] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
-    const [selectedAiStyle, setSelectedAiStyle] = useState(AI_STYLES[0]);
 
     // Pro Studio State
     const [activeTool, setActiveTool] = useState<'canvas' | 'filters' | 'adjust' | 'text' | 'stickers'>('canvas');
@@ -88,11 +79,14 @@ export const CreateModal: React.FC<CreateModalProps> = ({ onClose, onCreatePin, 
     
     // Video State
     const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+    const [generatingCaptions, setGeneratingCaptions] = useState(false);
+    const [captions, setCaptions] = useState<string[]>([]);
     const videoRef = useRef<HTMLVideoElement>(null);
 
     // Monetization State
     const [taggedProducts, setTaggedProducts] = useState<Product[]>([]);
     const [isExclusive, setIsExclusive] = useState(false);
+    const [adsEnabled, setAdsEnabled] = useState(true);
     const [showProductPicker, setShowProductPicker] = useState(false);
 
     // Meta State
@@ -126,6 +120,15 @@ export const CreateModal: React.FC<CreateModalProps> = ({ onClose, onCreatePin, 
             setSelectedFile(null);
             setMode(mode === 'ai' ? 'pin' : mode);
         }, 2000);
+    };
+
+    const handleGenerateCaptions = () => {
+        setGeneratingCaptions(true);
+        setTimeout(() => {
+            setCaptions(["Welcome to my new video!", "Today we are exploring design."]);
+            setGeneratingCaptions(false);
+            addCanvasItem('text', "Welcome to my new video!");
+        }, 1500);
     };
 
     const addCanvasItem = (type: 'text' | 'sticker', content: string) => {
@@ -190,9 +193,11 @@ export const CreateModal: React.FC<CreateModalProps> = ({ onClose, onCreatePin, 
                     id: `story-${Date.now()}`,
                     user: user,
                     imageUrl: previewUrl, 
+                    videoUrl: mode === 'video' ? previewUrl : undefined,
                     timestamp: 'Just now',
                     viewed: false,
-                    products: taggedProducts
+                    products: taggedProducts,
+                    isExclusive: isExclusive
                 };
                 onCreateStory(newStory);
             } else {
@@ -201,6 +206,8 @@ export const CreateModal: React.FC<CreateModalProps> = ({ onClose, onCreatePin, 
                     title: title || 'New Creation',
                     description: description || 'Created with Stoc Pro Studio',
                     imageUrl: previewUrl,
+                    videoUrl: mode === 'video' ? previewUrl : undefined,
+                    type: mode === 'video' ? 'video' : 'image',
                     width: 600,
                     height: 900,
                     tags: tags.length > 0 ? tags : ['creative'],
@@ -214,7 +221,11 @@ export const CreateModal: React.FC<CreateModalProps> = ({ onClose, onCreatePin, 
                         filter: editSettings.filter
                     },
                     taggedProducts: taggedProducts,
-                    isExclusive: isExclusive
+                    isExclusive: isExclusive,
+                    monetization: {
+                        adsEnabled: adsEnabled,
+                        isSubscriberOnly: isExclusive
+                    }
                 };
                 onCreatePin(newPin, selectedBoardId);
             }
@@ -459,12 +470,25 @@ export const CreateModal: React.FC<CreateModalProps> = ({ onClose, onCreatePin, 
                             ))}
 
                             {mode === 'video' && (
-                                <button 
-                                    onClick={toggleVideoPlay}
-                                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-4 bg-white/20 backdrop-blur-md rounded-full text-white opacity-0 group-hover/canvas:opacity-100 transition hover:scale-110"
-                                >
-                                    {isVideoPlaying ? <PauseCircle size={48} /> : <PlayCircle size={48} />}
-                                </button>
+                                <>
+                                    <button 
+                                        onClick={toggleVideoPlay}
+                                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-4 bg-white/20 backdrop-blur-md rounded-full text-white opacity-0 group-hover/canvas:opacity-100 transition hover:scale-110"
+                                    >
+                                        {isVideoPlaying ? <PauseCircle size={48} /> : <PlayCircle size={48} />}
+                                    </button>
+
+                                    {/* Video Tools Overlay */}
+                                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-3 opacity-0 group-hover/canvas:opacity-100 transition">
+                                        <button onClick={handleGenerateCaptions} className="bg-black/60 backdrop-blur-md text-white px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 hover:bg-black">
+                                            {generatingCaptions ? <Loader2 className="animate-spin" size={14}/> : <Subtitles size={14}/>} 
+                                            {generatingCaptions ? 'Generating...' : 'AI Captions'}
+                                        </button>
+                                        <button className="bg-black/60 backdrop-blur-md text-white px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 hover:bg-black">
+                                            <Scissors size={14}/> Trim
+                                        </button>
+                                    </div>
+                                </>
                             )}
                         </div>
                     ) : (
@@ -532,6 +556,25 @@ export const CreateModal: React.FC<CreateModalProps> = ({ onClose, onCreatePin, 
                             </h3>
                             
                             <div className="space-y-4">
+                                {mode === 'video' && (
+                                    <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-gray-200">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-1.5 bg-blue-100 text-blue-600 rounded-lg">
+                                                <Play size={14} fill="currentColor" />
+                                            </div>
+                                            <div>
+                                                <p className="text-xs font-bold text-gray-900">Enable Ads</p>
+                                            </div>
+                                        </div>
+                                        <button 
+                                            onClick={() => setAdsEnabled(!adsEnabled)}
+                                            className={`w-8 h-5 rounded-full transition-colors relative ${adsEnabled ? 'bg-blue-600' : 'bg-gray-200'}`}
+                                        >
+                                            <div className={`absolute top-1 w-3 h-3 bg-white rounded-full shadow-sm transition-transform ${adsEnabled ? 'left-4' : 'left-1'}`}></div>
+                                        </button>
+                                    </div>
+                                )}
+
                                 <div>
                                     <div className="flex justify-between items-center mb-2">
                                         <span className="text-xs font-bold text-gray-700">Tag Products</span>

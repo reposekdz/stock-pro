@@ -1,13 +1,13 @@
 
 import React, { useState } from 'react';
-import { ArrowLeft, BarChart2, DollarSign, ShoppingBag, Lock, Crown, Globe, TrendingUp, Users, Settings, Wallet, CreditCard, ChevronRight, Plus } from 'lucide-react';
+import { ArrowLeft, BarChart2, DollarSign, ShoppingBag, Lock, Crown, Globe, TrendingUp, Users, Settings, Wallet, ChevronRight, Plus, PlayCircle, CheckCircle, AlertCircle, Sparkles } from 'lucide-react';
 
 interface MonetizationDashboardProps {
     onClose: () => void;
 }
 
 export const MonetizationDashboard: React.FC<MonetizationDashboardProps> = ({ onClose }) => {
-    const [activeTab, setActiveTab] = useState<'overview' | 'shop' | 'subs' | 'ads'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'requirements' | 'video' | 'shop' | 'subs'>('overview');
 
     const StatCard = ({ label, value, trend, icon: Icon, color }: any) => (
         <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition">
@@ -56,6 +56,18 @@ export const MonetizationDashboard: React.FC<MonetizationDashboardProps> = ({ on
                         <BarChart2 size={20} /> Overview
                     </button>
                     <button 
+                        onClick={() => setActiveTab('requirements')}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition ${activeTab === 'requirements' ? 'bg-orange-500 text-white shadow-lg' : 'text-gray-500 hover:bg-gray-100'}`}
+                    >
+                        <CheckCircle size={20} /> Requirements
+                    </button>
+                    <button 
+                        onClick={() => setActiveTab('video')}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition ${activeTab === 'video' ? 'bg-red-500 text-white shadow-lg' : 'text-gray-500 hover:bg-gray-100'}`}
+                    >
+                        <PlayCircle size={20} /> Video Revenue
+                    </button>
+                    <button 
                         onClick={() => setActiveTab('shop')}
                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition ${activeTab === 'shop' ? 'bg-emerald-500 text-white shadow-lg' : 'text-gray-500 hover:bg-gray-100'}`}
                     >
@@ -67,19 +79,11 @@ export const MonetizationDashboard: React.FC<MonetizationDashboardProps> = ({ on
                     >
                         <Lock size={20} /> Subscriptions
                     </button>
-                    <button 
-                        onClick={() => setActiveTab('ads')}
-                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition ${activeTab === 'ads' ? 'bg-blue-500 text-white shadow-lg' : 'text-gray-500 hover:bg-gray-100'}`}
-                    >
-                        <Globe size={20} /> Ad Revenue
-                    </button>
+                    
                     <div className="mt-auto pt-6 border-t border-gray-100">
                         <div className="bg-gradient-to-br from-gray-900 to-black rounded-2xl p-4 text-white">
-                            <h4 className="font-bold text-sm mb-2">Creator Fund</h4>
-                            <p className="text-xs opacity-70 mb-3">You're in the top 5% of creators this month.</p>
-                            <div className="w-full bg-gray-700 h-1.5 rounded-full overflow-hidden mb-1">
-                                <div className="w-[85%] bg-yellow-400 h-full"></div>
-                            </div>
+                            <h4 className="font-bold text-sm mb-2 flex items-center gap-2"><Sparkles size={14} className="text-yellow-400"/> AI Innovation</h4>
+                            <p className="text-xs opacity-70 mb-3">Predicted earning trend: +15% next week based on your current content velocity.</p>
                         </div>
                     </div>
                 </div>
@@ -90,7 +94,7 @@ export const MonetizationDashboard: React.FC<MonetizationDashboardProps> = ({ on
                         <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in slide-in-from-right-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                 <StatCard label="Total Revenue" value="$12,450" trend={12} icon={DollarSign} color="bg-emerald-100 text-emerald-600" />
-                                <StatCard label="Product Clicks" value="8,234" trend={5} icon={ShoppingBag} color="bg-blue-100 text-blue-600" />
+                                <StatCard label="Video Ad Revenue" value="$3,240" trend={18} icon={PlayCircle} color="bg-red-100 text-red-600" />
                                 <StatCard label="New Subscribers" value="145" trend={24} icon={Users} color="bg-purple-100 text-purple-600" />
                                 <StatCard label="Avg. Engagement" value="4.8%" trend={-2} icon={TrendingUp} color="bg-orange-100 text-orange-600" />
                             </div>
@@ -116,6 +120,92 @@ export const MonetizationDashboard: React.FC<MonetizationDashboardProps> = ({ on
                                         <span className="text-xs font-bold text-gray-400 mt-2">M{i+1}</span>
                                     </div>
                                 ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'requirements' && (
+                        <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-right-4">
+                            <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 mb-8">
+                                <h2 className="text-2xl font-black text-gray-900 mb-2">Monetization Eligibility</h2>
+                                <p className="text-gray-500 mb-8">Track your progress towards becoming a Partner and earning revenue from ads and exclusives.</p>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    {/* Followers Requirement */}
+                                    <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200">
+                                        <div className="flex justify-between items-center mb-4">
+                                            <h3 className="font-bold text-lg">Followers</h3>
+                                            <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">Completed</span>
+                                        </div>
+                                        <p className="text-3xl font-black mb-2">8,420 <span className="text-sm font-medium text-gray-400">/ 1,000 required</span></p>
+                                        <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+                                            <div className="w-full bg-emerald-500 h-full"></div>
+                                        </div>
+                                    </div>
+
+                                    {/* Watch Hours Requirement */}
+                                    <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200">
+                                        <div className="flex justify-between items-center mb-4">
+                                            <h3 className="font-bold text-lg">Public Watch Hours</h3>
+                                            <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold">In Progress</span>
+                                        </div>
+                                        <p className="text-3xl font-black mb-2">3,240 <span className="text-sm font-medium text-gray-400">/ 4,000 required</span></p>
+                                        <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+                                            <div className="w-[81%] bg-yellow-500 h-full rounded-full"></div>
+                                        </div>
+                                        <p className="text-xs text-gray-500 mt-2">Earned in the last 365 days</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-blue-50 rounded-3xl p-8 border border-blue-100 flex items-start gap-4">
+                                <div className="p-3 bg-blue-100 text-blue-600 rounded-full">
+                                    <AlertCircle size={24} />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-blue-900 text-lg">Almost there!</h3>
+                                    <p className="text-blue-700 mt-1">You just need 760 more watch hours to apply for the Partner Program. Uploading longer video content can help you reach this goal faster.</p>
+                                    <button className="mt-4 px-6 py-2 bg-blue-600 text-white font-bold rounded-full hover:bg-blue-700 transition">
+                                        Upload Video
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'video' && (
+                        <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-right-4">
+                            <div className="flex justify-between items-end mb-8">
+                                <div>
+                                    <h2 className="text-2xl font-black text-gray-900">Video Earnings</h2>
+                                    <p className="text-gray-500">Revenue generated from video ads and premium views.</p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                     <span className="text-sm font-bold text-gray-500">CPM</span>
+                                     <span className="text-xl font-black text-gray-900">$12.45</span>
+                                </div>
+                            </div>
+
+                            <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm mb-8">
+                                <h3 className="font-bold mb-4">Top Earning Videos</h3>
+                                <div className="space-y-4">
+                                    {[1,2,3].map(i => (
+                                        <div key={i} className="flex items-center gap-4 p-4 hover:bg-gray-50 rounded-xl transition cursor-pointer border border-transparent hover:border-gray-100">
+                                            <div className="w-32 h-20 bg-gray-100 rounded-lg overflow-hidden relative">
+                                                <img src={`https://picsum.photos/seed/video${i}/300/200`} className="w-full h-full object-cover" />
+                                                <div className="absolute bottom-1 right-1 bg-black text-white text-[10px] font-bold px-1 rounded">0:45</div>
+                                            </div>
+                                            <div className="flex-1">
+                                                <h4 className="font-bold text-gray-900">Cinematic B-Roll {i}</h4>
+                                                <p className="text-xs text-gray-500">Published 3 days ago • 12k Views</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="font-black text-emerald-600">$145.20</p>
+                                                <p className="text-xs text-gray-400">Est. Revenue</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     )}

@@ -1,8 +1,7 @@
 
-
 import React, { useEffect, useState, useRef } from 'react';
-import { X, MoreHorizontal, Share2, BadgeCheck, Heart, Smile, ChevronDown, Download, Maximize2, Crop, Sparkles, ShoppingBag, Search } from 'lucide-react';
-import { Pin, Comment, Board, User } from '../types';
+import { X, MoreHorizontal, Share2, BadgeCheck, Heart, Smile, ChevronDown, Download, Maximize2, Crop, Sparkles, ShoppingBag, Search, Lock, Crown, Play, Pause, Volume2, VolumeX } from 'lucide-react';
+import { Pin, Comment, Board, User, Product } from '../types';
 import { generateRelatedComments } from '../services/geminiService';
 import { PinCard } from './PinCard';
 
@@ -21,6 +20,7 @@ interface VisualDot {
     y: number;
     label: string;
     price: string;
+    product?: Product;
 }
 
 export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins, boards, onTagClick, onUserClick }) => {
@@ -35,21 +35,42 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
   const imageContainerRef = useRef<HTMLDivElement>(null);
   const [visualDots, setVisualDots] = useState<VisualDot[]>([]);
 
+  // Video State
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [showAd, setShowAd] = useState(false);
+  const [adTimer, setAdTimer] = useState(5);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
   // Floating Reactions
   const [floatingEmojis, setFloatingEmojis] = useState<{id: number, char: string, left: number}[]>([]);
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     
-    // Simulate finding "shoppable" items in the image
-    const randomDots: VisualDot[] = Array.from({ length: Math.floor(Math.random() * 3) + 1 }).map((_, i) => ({
-        id: i,
-        x: Math.random() * 60 + 20, // Keep away from edges
-        y: Math.random() * 60 + 20,
-        label: ['Modern Lamp', 'Abstract Print', 'Ceramic Vase', 'Wool Throw'][Math.floor(Math.random() * 4)],
-        price: `$${Math.floor(Math.random() * 100) + 20}.00`
-    }));
-    setVisualDots(randomDots);
+    // Determine dots: Use taggedProducts if available, otherwise simulate AI detection
+    if (pin.taggedProducts && pin.taggedProducts.length > 0) {
+        // Since we don't have X/Y stored in the current data model for tags, randomizing them for the visual effect
+        const dots = pin.taggedProducts.map((p, i) => ({
+            id: i,
+            x: Math.random() * 60 + 20,
+            y: Math.random() * 60 + 20,
+            label: p.name,
+            price: `${p.currency}${p.price}`,
+            product: p
+        }));
+        setVisualDots(dots);
+    } else {
+        // Simulate finding "shoppable" items in the image if none tagged
+        const randomDots: VisualDot[] = Array.from({ length: Math.floor(Math.random() * 2) }).map((_, i) => ({
+            id: i,
+            x: Math.random() * 60 + 20, // Keep away from edges
+            y: Math.random() * 60 + 20,
+            label: ['Modern Lamp', 'Abstract Print', 'Ceramic Vase', 'Wool Throw'][Math.floor(Math.random() * 4)],
+            price: `$${Math.floor(Math.random() * 100) + 20}.00`
+        }));
+        setVisualDots(randomDots);
+    }
 
     if (comments.length === 0) {
         setLoadingComments(true);
@@ -76,7 +97,7 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [pin.id]);
+  }, [pin.id, pin.taggedProducts]);
 
   const handleAuthorClick = () => {
       if(onUserClick) {
@@ -117,6 +138,30 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
       }, 2000);
   }
 
+  const handleVideoPlay = () => {
+      if (pin.monetization?.adsEnabled && !isPlaying) {
+          setShowAd(true);
+          const interval = setInterval(() => {
+              setAdTimer(prev => {
+                  if (prev <= 1) {
+                      clearInterval(interval);
+                      setShowAd(false);
+                      setIsPlaying(true);
+                      videoRef.current?.play();
+                      return 0;
+                  }
+                  return prev - 1;
+              });
+          }, 1000);
+      } else {
+          setIsPlaying(!isPlaying);
+          if (videoRef.current) {
+              if (isPlaying) videoRef.current.pause();
+              else videoRef.current.play();
+          }
+      }
+  }
+
   return (
     <div className="fixed inset-0 z-[100] bg-white flex flex-col md:flex-row animate-in fade-in duration-200">
         
@@ -127,7 +172,7 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
             <X size={24} />
         </button>
 
-        {/* Left Side: Immersive Image Viewer */}
+        {/* Left Side: Immersive Image/Video Viewer */}
         <div 
             className="w-full md:w-[60%] lg:w-[65%] h-[50vh] md:h-full bg-black flex items-center justify-center relative group overflow-hidden cursor-zoom-in"
             ref={imageContainerRef}
@@ -141,15 +186,68 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
             ></div>
             
             <div className="relative z-10 w-full h-full flex items-center justify-center">
-                <img 
-                    src={pin.imageUrl} 
-                    alt={pin.title} 
-                    className={`max-w-full max-h-[90vh] object-contain transition-all duration-200 ${isCropMode ? 'scale-90 opacity-50' : ''}`}
-                    style={{
-                        transform: isZooming && !isCropMode ? 'scale(1.5)' : 'scale(1)',
-                        transformOrigin: `${zoomPosition.x}% ${zoomPosition.y}%`
-                    }}
-                />
+                {pin.type === 'video' ? (
+                    <div className="relative w-full h-full flex items-center justify-center">
+                        <video 
+                            ref={videoRef}
+                            src={pin.videoUrl || pin.imageUrl} 
+                            poster={pin.imageUrl}
+                            className="max-w-full max-h-[90vh] object-contain"
+                            loop
+                            muted={isMuted}
+                            onClick={handleVideoPlay}
+                        />
+                        
+                        {/* Play Button Overlay */}
+                        {!isPlaying && !showAd && (
+                            <button onClick={handleVideoPlay} className="absolute inset-0 flex items-center justify-center bg-black/20 group hover:bg-black/30 transition">
+                                <div className="w-20 h-20 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center group-hover:scale-110 transition">
+                                    <Play size={40} className="text-white fill-white ml-1" />
+                                </div>
+                            </button>
+                        )}
+
+                        {/* Ad Overlay */}
+                        {showAd && (
+                            <div className="absolute inset-0 bg-black z-50 flex flex-col items-center justify-center">
+                                <p className="text-white font-bold mb-4">Ad: Latest Tech Gadgets</p>
+                                <div className="w-64 h-36 bg-gray-800 rounded-lg mb-4 flex items-center justify-center">
+                                    <span className="text-gray-500 font-bold">Ad Content</span>
+                                </div>
+                                <div className="text-white text-sm">Video will play in {adTimer}s</div>
+                            </div>
+                        )}
+
+                        {/* Video Controls */}
+                        <div className="absolute bottom-6 right-6 flex gap-4 opacity-0 group-hover:opacity-100 transition">
+                             <button onClick={() => setIsMuted(!isMuted)} className="p-3 bg-black/50 text-white rounded-full hover:bg-black">
+                                 {isMuted ? <VolumeX size={20}/> : <Volume2 size={20}/>}
+                             </button>
+                        </div>
+                    </div>
+                ) : (
+                    <img 
+                        src={pin.imageUrl} 
+                        alt={pin.title} 
+                        className={`max-w-full max-h-[90vh] object-contain transition-all duration-200 ${isCropMode ? 'scale-90 opacity-50' : ''}`}
+                        style={{
+                            transform: isZooming && !isCropMode ? 'scale(1.5)' : 'scale(1)',
+                            transformOrigin: `${zoomPosition.x}% ${zoomPosition.y}%`
+                        }}
+                    />
+                )}
+
+                {/* Subscriber Lock Overlay */}
+                {pin.isExclusive && (
+                    <div className="absolute inset-0 z-40 bg-black/60 backdrop-blur-md flex flex-col items-center justify-center text-white">
+                        <Lock size={48} className="mb-4 text-purple-400" />
+                        <h2 className="text-2xl font-bold mb-2">Subscriber Exclusive</h2>
+                        <p className="mb-6 opacity-80">Subscribe to {pin.author.username} to view this content</p>
+                        <button className="px-8 py-3 bg-white text-black font-bold rounded-full hover:scale-105 transition">
+                            Unlock for $2.99
+                        </button>
+                    </div>
+                )}
 
                 {/* Visual Dots (Shop the Look) */}
                 {!isZooming && !isCropMode && visualDots.map(dot => (
@@ -166,7 +264,7 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
                         {/* Tooltip Product Card */}
                         <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-3 opacity-0 group-hover/dot:opacity-100 transition-all duration-300 translate-y-2 group-hover/dot:translate-y-0 pointer-events-none group-hover/dot:pointer-events-auto w-48 bg-white rounded-xl shadow-2xl p-3 border border-gray-100">
                              <div className="w-full h-24 bg-gray-100 rounded-lg mb-2 overflow-hidden">
-                                 <img src={`https://picsum.photos/seed/${dot.id}prod/200/200`} className="w-full h-full object-cover" />
+                                 <img src={dot.product?.imageUrl || `https://picsum.photos/seed/${dot.id}prod/200/200`} className="w-full h-full object-cover" />
                              </div>
                              <p className="font-bold text-gray-900 text-sm">{dot.label}</p>
                              <div className="flex justify-between items-center mt-1">
@@ -213,7 +311,7 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
             </div>
             
             {/* Visual Search Hint */}
-            {!isCropMode && !isZooming && (
+            {!isCropMode && !isZooming && pin.type !== 'video' && (
                 <div className="absolute top-8 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-md text-white px-4 py-2 rounded-full text-xs font-bold pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 border border-white/10">
                      <Search size={12} /> Hover to zoom • Click dots to shop
                 </div>
@@ -235,6 +333,18 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
             </div>
 
             <div className="p-8">
+                {pin.isExclusive && (
+                    <div className="mb-4 bg-purple-50 text-purple-700 border border-purple-100 rounded-xl p-3 flex items-center gap-3">
+                        <div className="p-2 bg-purple-100 rounded-lg">
+                            <Crown size={20} />
+                        </div>
+                        <div>
+                            <p className="font-bold text-sm">Subscriber Exclusive</p>
+                            <p className="text-xs">Only available to super fans</p>
+                        </div>
+                    </div>
+                )}
+
                 <div className="flex items-center gap-4 mb-6">
                     <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
                         <Sparkles size={12} /> 98% Visual Match
@@ -246,6 +356,31 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
 
                 <h1 className="text-4xl font-extrabold mb-4 text-gray-900 leading-tight">{pin.title}</h1>
                 <p className="text-gray-600 text-lg mb-8 leading-relaxed">{pin.description}</p>
+
+                {/* Shop the Look Section - MONETIZATION FEATURE */}
+                {pin.taggedProducts && pin.taggedProducts.length > 0 && (
+                    <div className="mb-8">
+                        <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                            <ShoppingBag size={18} /> Shop the Look
+                        </h3>
+                        <div className="space-y-3">
+                            {pin.taggedProducts.map((product) => (
+                                <div key={product.id} className="flex items-center gap-4 p-3 rounded-2xl border border-gray-100 hover:border-emerald-200 hover:shadow-md transition cursor-pointer group/prod">
+                                    <div className="w-16 h-16 rounded-xl bg-gray-100 overflow-hidden">
+                                        <img src={product.imageUrl} className="w-full h-full object-cover group-hover/prod:scale-110 transition-transform" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <h4 className="font-bold text-gray-900 text-sm">{product.name}</h4>
+                                        <p className="text-emerald-600 font-bold text-sm">{product.currency}{product.price}</p>
+                                    </div>
+                                    <button className="px-4 py-2 bg-black text-white rounded-full text-xs font-bold hover:bg-emerald-600 transition">
+                                        View
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 <div className="flex flex-wrap gap-2 mb-8">
                     {pin.tags.map((tag, i) => (

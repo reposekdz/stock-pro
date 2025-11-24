@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, MouseEvent } from 'react';
-import { Share2, MoreHorizontal, ChevronDown, Check, ScanSearch, Archive, Heart, Hash, Eye, TrendingUp, Wand2 } from 'lucide-react';
+import { Share2, MoreHorizontal, ChevronDown, Check, ScanSearch, Archive, Heart, Hash, Eye, TrendingUp, Wand2, Lock, Crown } from 'lucide-react';
 import { Pin, Board, User } from '../types';
 
 interface PinCardProps {
@@ -153,6 +153,14 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
             }}
             loading="lazy"
           />
+          
+          {/* Subscriber Exclusive Badge */}
+          {pin.isExclusive && (
+              <div className="absolute top-3 left-3 z-30 bg-purple-600 text-white px-2 py-1 rounded-lg shadow-lg flex items-center gap-1.5 backdrop-blur-md">
+                  <Crown size={12} fill="currentColor" className="text-yellow-300"/>
+                  <span className="text-[10px] font-black uppercase tracking-wider">Subscriber Only</span>
+              </div>
+          )}
           
           <div className={`absolute inset-0 flex items-center justify-center pointer-events-none z-30 transition-all duration-300 ${showHeart ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}`}>
              <Heart size={80} className="fill-emerald-500 text-emerald-500 drop-shadow-2xl animate-bounce" />

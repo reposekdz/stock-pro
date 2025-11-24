@@ -1,6 +1,7 @@
 
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { X, Heart, MessageCircle, Share2, MoreHorizontal, ChevronLeft, ChevronRight, Play, Pause, Volume2, VolumeX, Send } from 'lucide-react';
+import { X, Heart, MessageCircle, Share2, MoreHorizontal, ChevronLeft, ChevronRight, Play, Pause, Volume2, VolumeX, Send, ShoppingBag, ChevronDown } from 'lucide-react';
 import { Story, User } from '../types';
 
 interface StoryViewerProps {
@@ -17,6 +18,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ initialIndex, stories,
   const [isMuted, setIsMuted] = useState(true);
   const [liked, setLiked] = useState(false);
   const [comment, setComment] = useState("");
+  const [showProducts, setShowProducts] = useState(false);
   
   const [hearts, setHearts] = useState<{id: number, left: number}[]>([]);
 
@@ -30,6 +32,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ initialIndex, stories,
       setCurrentIndex(prev => prev + 1);
       setProgress(0);
       setLiked(false);
+      setShowProducts(false);
     } else {
       onClose();
     }
@@ -40,13 +43,14 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ initialIndex, stories,
       setCurrentIndex(prev => prev - 1);
       setProgress(0);
       setLiked(false);
+      setShowProducts(false);
     } else {
         setProgress(0);
     }
   }, [currentIndex]);
 
   useEffect(() => {
-    if (isPaused) return;
+    if (isPaused || showProducts) return; // Pause if products open
 
     const startTime = Date.now() - (progress / 100) * STORY_DURATION;
 
@@ -62,7 +66,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ initialIndex, stories,
     }, 16); 
 
     return () => clearInterval(intervalRef.current);
-  }, [currentIndex, isPaused, handleNext, progress]);
+  }, [currentIndex, isPaused, handleNext, progress, showProducts]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -185,7 +189,21 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ initialIndex, stories,
             ))}
         </div>
 
+        {/* Action Buttons */}
         <div className="absolute bottom-24 right-4 z-30 flex flex-col items-center gap-6">
+            {/* Shopping Bag - Monetization */}
+            {currentStory.products && currentStory.products.length > 0 && (
+                <button 
+                    className="flex flex-col items-center gap-1 group/btn animate-in fade-in slide-in-from-bottom-2"
+                    onClick={() => setShowProducts(!showProducts)}
+                >
+                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
+                        <ShoppingBag size={20} className="text-black" />
+                    </div>
+                    <span className="text-white text-xs font-bold">Shop</span>
+                </button>
+            )}
+
             <button className="flex flex-col items-center gap-1 group/btn" onClick={toggleLike}>
                 <Heart 
                     size={32} 
@@ -202,6 +220,34 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ initialIndex, stories,
                 <span className="text-white text-xs font-bold">Share</span>
             </button>
         </div>
+
+        {/* Product Drawer */}
+        {showProducts && currentStory.products && (
+            <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl z-40 p-6 animate-in slide-in-from-bottom-full duration-300">
+                <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xl font-black text-gray-900">Shop this Story</h3>
+                    <button onClick={() => setShowProducts(false)} className="p-2 bg-gray-100 rounded-full">
+                        <ChevronDown size={20}/>
+                    </button>
+                </div>
+                <div className="space-y-4 max-h-[50vh] overflow-y-auto">
+                    {currentStory.products.map(p => (
+                        <div key={p.id} className="flex gap-4 items-center">
+                            <div className="w-20 h-20 rounded-xl bg-gray-100 overflow-hidden flex-shrink-0">
+                                <img src={p.imageUrl} className="w-full h-full object-cover" />
+                            </div>
+                            <div className="flex-1">
+                                <h4 className="font-bold text-gray-900">{p.name}</h4>
+                                <p className="text-emerald-600 font-bold">{p.currency}{p.price}</p>
+                            </div>
+                            <button className="px-6 py-2 bg-black text-white font-bold rounded-full text-sm">
+                                View
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        )}
 
         <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/90 to-transparent z-30">
              <div className="flex gap-3 items-center mb-4">

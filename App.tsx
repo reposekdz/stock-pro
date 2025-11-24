@@ -11,8 +11,8 @@ import { StoryViewer } from './components/StoryViewer';
 import { CreateModal } from './components/CreateModal';
 import { UserListModal } from './components/UserListModal';
 import { Messages } from './components/Messages';
-import { MonetizationDashboard } from './components/MonetizationDashboard'; // Added
-import { Pin, User, Board, ViewState, Filter, Story, Collaborator } from './types';
+import { MonetizationDashboard } from './components/MonetizationDashboard'; 
+import { Pin, User, Board, ViewState, Filter, Story, Collaborator, Product } from './types';
 import { generatePinDetails, getPersonalizedTopics } from './services/geminiService';
 import { Wand2, Plus, SlidersHorizontal, ArrowUp, ScanLine, Loader2, Archive, X, ArrowRight, Zap, Play, ChevronLeft, ChevronRight, Palette, Layout, Sparkles, RefreshCw, Layers, Settings as SettingsIcon, MessageSquare, Phone } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -24,6 +24,13 @@ const DEFAULT_TOPICS = [
   "Solar Punk", "DIY Tech", "Tattoo Art", "Glassmorphism", "Retro Anime", "Vaporwave", "Minimalist Setup"
 ];
 
+const MOCK_PRODUCTS_LIST: Product[] = [
+    { id: 'p1', name: 'Ceramic Vase', price: 45, currency: '$', imageUrl: 'https://picsum.photos/seed/vase/100/100', affiliateLink: '#' },
+    { id: 'p2', name: 'Linen Throw', price: 89, currency: '$', imageUrl: 'https://picsum.photos/seed/linen/100/100', affiliateLink: '#' },
+    { id: 'p3', name: 'Table Lamp', price: 120, currency: '$', imageUrl: 'https://picsum.photos/seed/lamp/100/100', affiliateLink: '#' },
+    { id: 'p4', name: 'Minimal Chair', price: 299, currency: '$', imageUrl: 'https://picsum.photos/seed/chair/100/100', affiliateLink: '#' },
+];
+
 const generateMockUser = (): User => ({
     id: 'current-user',
     username: 'DesignPro',
@@ -32,7 +39,12 @@ const generateMockUser = (): User => ({
     following: 345,
     bio: 'Curating the future of design. Digital Architect & Visual Storyteller.',
     coverUrl: 'https://picsum.photos/seed/myCover/1600/400',
-    isCreator: true
+    isCreator: true,
+    monetizationEligibility: {
+        watchHours: 3240,
+        requiredWatchHours: 4000,
+        eligible: false
+    }
 });
 
 const generateMockUserList = (count: number): User[] => {
@@ -95,7 +107,9 @@ const generateMockStories = (): Story[] => {
         },
         imageUrl: `https://picsum.photos/seed/story${i}v3/400/800`,
         timestamp: `${Math.floor(Math.random() * 12) + 1}h`,
-        viewed: Math.random() > 0.7
+        viewed: Math.random() > 0.7,
+        // Add random products to 40% of stories
+        products: Math.random() > 0.6 ? [MOCK_PRODUCTS_LIST[Math.floor(Math.random() * MOCK_PRODUCTS_LIST.length)]] : []
     }));
 };
 
@@ -106,17 +120,30 @@ const generateMockPins = (count: number, topicSeed?: string, tagsOverride?: stri
     const height = Math.floor(Math.random() * (900 - 500 + 1)) + 500;
     const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const isExclusive = Math.random() > 0.9;
+    const isVideo = Math.random() > 0.85; // 15% chance of being a video
+    
+    // Add random tagged products to 30% of pins
+    const taggedProducts = Math.random() > 0.7 
+        ? [MOCK_PRODUCTS_LIST[Math.floor(Math.random() * MOCK_PRODUCTS_LIST.length)]] 
+        : [];
 
     return {
       id,
       title: topic,
       description: `A curated exploration of ${topic.toLowerCase()}. Visual innovation meets timeless design.`,
       imageUrl: `https://picsum.photos/seed/${id}v2/${width}/${height}`,
+      type: isVideo ? 'video' : 'image',
+      videoUrl: isVideo ? 'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/720/Big_Buck_Bunny_720_10s_1MB.mp4' : undefined, // Placeholder video
       width,
       height,
       tags: tagsOverride || [topic.split(' ')[0], 'inspiration', 'design'],
       likes: Math.floor(Math.random() * 2000),
       isExclusive: isExclusive,
+      taggedProducts: taggedProducts,
+      monetization: {
+          adsEnabled: isVideo, // Enable ads if it's a video
+          isSubscriberOnly: isExclusive
+      },
       author: {
         id: `user-${i}`,
         username: `creator_${Math.floor(Math.random() * 999)}`,
