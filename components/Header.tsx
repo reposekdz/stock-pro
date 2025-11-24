@@ -94,8 +94,8 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className={`fixed top-4 left-4 right-4 z-[100] transition-all duration-500 ease-in-out ${zenMode ? '-translate-y-32 opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'}`}>
-      <div className="bg-white/80 backdrop-blur-2xl rounded-full px-3 py-3 shadow-[0_8px_32px_rgba(0,0,0,0.08)] border border-white/50 flex items-center justify-between gap-3 md:gap-4 relative overflow-visible z-50">
+    <header className={`w-full px-4 pt-4 pb-2 z-[100] transition-all duration-700 ease-in-out ${zenMode ? '-mt-32 opacity-0 pointer-events-none' : 'opacity-100'}`}>
+      <div className="max-w-[1920px] mx-auto bg-white/80 backdrop-blur-2xl rounded-full px-3 py-3 shadow-[0_8px_32px_rgba(0,0,0,0.08)] border border-white/50 flex items-center justify-between gap-3 md:gap-4 relative overflow-visible z-50">
         
         <div className="flex items-center gap-4 pl-1">
           {/* Interactive Logo */}

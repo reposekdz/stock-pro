@@ -484,9 +484,9 @@ const App: React.FC = () => {
         onForward={goForward}
       />
       
-      {/* Integrated Floating Category Navigation */}
+      {/* Integrated Floating Category Navigation - Now flows naturally */}
       {viewState === ViewState.HOME && (
-          <div className="fixed top-[88px] left-0 right-0 z-40 flex justify-center pointer-events-none">
+          <div className="w-full z-40 flex justify-center pointer-events-none mt-2">
              <div className="w-full max-w-[1920px] px-4 relative pointer-events-auto group/nav">
                 
                 {/* Modern Navigation Buttons - Only appear on hover/need */}
@@ -534,7 +534,7 @@ const App: React.FC = () => {
           </div>
       )}
       
-      <main className={`px-4 max-w-[1920px] mx-auto min-h-screen transition-all duration-500 ${viewState === ViewState.HOME ? 'pt-44' : 'pt-36'}`}>
+      <main className={`px-4 max-w-[1920px] mx-auto min-h-screen transition-all duration-500 pt-4`}>
         {renderContent()}
       </main>
 
