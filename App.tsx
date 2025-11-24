@@ -1,10 +1,12 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Header } from './components/Header';
 import { PinCard } from './components/PinCard';
 import { PinDetail } from './components/PinDetail';
 import { Profile } from './components/Profile';
 import { BoardDetail } from './components/BoardDetail';
-import { Pin, User, Board, ViewState, Filter } from './types';
+import { StoryViewer } from './components/StoryViewer';
+import { Pin, User, Board, ViewState, Filter, Story } from './types';
 import { generatePinDetails, getPersonalizedTopics } from './services/geminiService';
 import { Wand2, Plus, SlidersHorizontal, ArrowUp, ScanLine, Loader2, Archive, X, ArrowRight, Zap, Play, ChevronLeft, ChevronRight, Palette, Layout, Sparkles, RefreshCw, Layers } from 'lucide-react';
 
@@ -42,6 +44,22 @@ const generateMockBoards = (userId: string): Board[] => [
         createdAt: new Date().toISOString()
     },
 ];
+
+const generateMockStories = (): Story[] => {
+    return Array.from({ length: 10 }).map((_, i) => ({
+        id: `story-${i}`,
+        user: {
+            id: `user-${i}`,
+            username: `Creator_${Math.floor(Math.random() * 1000)}`,
+            avatarUrl: `https://picsum.photos/seed/avatar${i}/100/100`,
+            followers: 100,
+            following: 10
+        },
+        imageUrl: `https://picsum.photos/seed/story${i}v3/400/800`,
+        timestamp: `${Math.floor(Math.random() * 12) + 1}h`,
+        viewed: Math.random() > 0.7
+    }));
+};
 
 const generateMockPins = (count: number, topicSeed?: string, tagsOverride?: string[]): Pin[] => {
   return Array.from({ length: count }).map((_, i) => {
@@ -102,11 +120,15 @@ const App: React.FC = () => {
   const [currentUser] = useState<User>(generateMockUser());
   const [boards, setBoards] = useState<Board[]>(generateMockBoards(currentUser.id));
   const [homePins, setHomePins] = useState<Pin[]>([]);
+  const [stories, setStories] = useState<Story[]>([]);
   const [searchPins, setSearchPins] = useState<Pin[]>([]);
   const [selectedPin, setSelectedPin] = useState<Pin | null>(null);
   const [selectedBoard, setSelectedBoard] = useState<Board | null>(null);
   const [activeCategory, setActiveCategory] = useState("For You");
   
+  // --- Story State ---
+  const [activeStoryIndex, setActiveStoryIndex] = useState<number | null>(null);
+
   // --- Search & Filters ---
   const [currentQuery, setCurrentQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
@@ -140,6 +162,7 @@ const App: React.FC = () => {
           await new Promise(r => setTimeout(r, 500)); // Smooth load
           const newPins = generateMockPins(30);
           setHomePins(newPins);
+          setStories(generateMockStories());
       } finally {
           setLoading(false);
       }
@@ -421,16 +444,24 @@ const App: React.FC = () => {
                                  <span className="text-sm font-bold text-gray-500">Add Story</span>
                              </div>
 
-                             {[1,2,3,4,5,6,7,8,9,10].map(i => (
-                                 <div key={i} className="flex-shrink-0 w-36 h-64 relative rounded-2xl overflow-hidden cursor-pointer group snap-start transition-transform duration-300 hover:-translate-y-2 hover:shadow-2xl">
+                             {stories.map((story, i) => (
+                                 <div 
+                                    key={story.id} 
+                                    className="flex-shrink-0 w-36 h-64 relative rounded-2xl overflow-hidden cursor-pointer group snap-start transition-transform duration-300 hover:-translate-y-2 hover:shadow-2xl ring-2 ring-transparent hover:ring-emerald-400"
+                                    onClick={() => setActiveStoryIndex(i)}
+                                 >
                                      <img 
-                                        src={`https://picsum.photos/seed/spark${i}new/400/800`} 
+                                        src={story.imageUrl} 
                                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
                                         loading="lazy"
                                      />
                                      <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-transparent to-black/80"></div>
-                                     <div className="absolute inset-0 ring-1 ring-inset ring-white/10 rounded-2xl"></div>
                                      
+                                     {/* Unviewed Ring */}
+                                     {!story.viewed && (
+                                         <div className="absolute inset-0 ring-4 ring-inset ring-emerald-500/80 rounded-2xl"></div>
+                                     )}
+
                                      {i % 3 === 0 && (
                                          <div className="absolute top-3 right-3 bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded-sm shadow-sm animate-pulse">
                                              LIVE
@@ -439,10 +470,10 @@ const App: React.FC = () => {
 
                                      <div className="absolute bottom-4 left-3 right-3 flex flex-col gap-1">
                                          <div className="flex items-center gap-2">
-                                            <div className="w-8 h-8 rounded-full border border-white p-0.5 overflow-hidden bg-black">
-                                                <img src={`https://picsum.photos/seed/user${i}/100/100`} className="w-full h-full rounded-full object-cover"/>
+                                            <div className="w-8 h-8 rounded-full border-2 border-emerald-500 p-0.5 overflow-hidden bg-black">
+                                                <img src={story.user.avatarUrl} className="w-full h-full rounded-full object-cover"/>
                                             </div>
-                                            <span className="text-xs font-bold text-white truncate drop-shadow-md">Creator_{i}</span>
+                                            <span className="text-xs font-bold text-white truncate drop-shadow-md">{story.user.username}</span>
                                          </div>
                                      </div>
                                  </div>
@@ -623,6 +654,15 @@ const App: React.FC = () => {
           boards={boards}
           onTagClick={handleSearch}
         />
+      )}
+
+      {/* Story Viewer Overlay */}
+      {activeStoryIndex !== null && (
+          <StoryViewer 
+            initialIndex={activeStoryIndex}
+            stories={stories}
+            onClose={() => setActiveStoryIndex(null)}
+          />
       )}
       
       <style>{`

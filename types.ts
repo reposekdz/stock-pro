@@ -1,3 +1,4 @@
+
 export interface User {
   id: string;
   username: string;
@@ -44,6 +45,14 @@ export interface Filter {
   label: string;
   value: string;
   type: 'color' | 'style' | 'category';
+}
+
+export interface Story {
+  id: string;
+  user: User;
+  imageUrl: string;
+  timestamp: string;
+  viewed: boolean;
 }
 
 export enum ViewState {
