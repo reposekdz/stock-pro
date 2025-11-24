@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { X, MoreHorizontal, Share2, ArrowUpRight, Heart, Smile, ChevronDown, Download, Maximize2 } from 'lucide-react';
+import { X, MoreHorizontal, Share2, BadgeCheck, Heart, Smile, ChevronDown, Download, Maximize2, Crop, Sparkles } from 'lucide-react';
 import { Pin, Comment, Board } from '../types';
 import { generateRelatedComments } from '../services/geminiService';
 import { PinCard } from './PinCard';
@@ -16,6 +16,7 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
   const [comments, setComments] = useState<Comment[]>(pin.comments || []);
   const [loadingComments, setLoadingComments] = useState(false);
   const [newComment, setNewComment] = useState("");
+  const [isCropMode, setIsCropMode] = useState(false);
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -64,15 +65,34 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
                 style={{ backgroundImage: `url(${pin.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
             ></div>
             
-            <img 
-                src={pin.imageUrl} 
-                alt={pin.title} 
-                className="relative z-10 w-full h-full object-contain transition-transform duration-700 hover:scale-105" 
-                style={{ maxHeight: '100vh', maxWidth: '100%' }}
-            />
+            <div className="relative z-10 w-full h-full flex items-center justify-center">
+                <img 
+                    src={pin.imageUrl} 
+                    alt={pin.title} 
+                    className={`max-w-full max-h-[90vh] object-contain transition-all duration-500 ${isCropMode ? 'scale-90 opacity-50 cursor-crosshair' : ''}`}
+                />
+                
+                {/* Simulated Crop Box */}
+                {isCropMode && (
+                    <div className="absolute w-64 h-64 border-2 border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.7)] flex items-center justify-center">
+                         <div className="text-white font-bold bg-black/50 px-3 py-1 rounded-full text-sm">Select Area</div>
+                         <div className="absolute -top-1 -left-1 w-4 h-4 border-t-4 border-l-4 border-white"></div>
+                         <div className="absolute -top-1 -right-1 w-4 h-4 border-t-4 border-r-4 border-white"></div>
+                         <div className="absolute -bottom-1 -left-1 w-4 h-4 border-b-4 border-l-4 border-white"></div>
+                         <div className="absolute -bottom-1 -right-1 w-4 h-4 border-b-4 border-r-4 border-white"></div>
+                    </div>
+                )}
+            </div>
 
             {/* Floating Actions on Media */}
             <div className="absolute bottom-8 right-8 z-20 flex flex-col gap-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <button 
+                    className={`p-4 rounded-full text-white transition shadow-lg border border-white/10 ${isCropMode ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-white/10 backdrop-blur-md hover:bg-white hover:text-black'}`}
+                    onClick={() => setIsCropMode(!isCropMode)}
+                    title="Visual Scan"
+                >
+                    <Crop size={20} />
+                </button>
                 <button className="p-4 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white hover:text-black transition shadow-lg border border-white/10">
                     <Maximize2 size={20} />
                 </button>
@@ -93,15 +113,21 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
                 </div>
                 <div className="flex gap-3">
                     <button className="px-6 py-3 bg-gray-100 rounded-full font-bold hover:bg-gray-200 transition text-gray-900">Profile</button>
-                    <button className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-full font-bold hover:shadow-lg hover:brightness-110 transition">Save</button>
+                    <button className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-full font-bold hover:shadow-lg hover:brightness-110 transition active:scale-95">Save</button>
                 </div>
             </div>
 
             <div className="p-8">
-                {/* Pin Info */}
-                <a href="#" className="underline text-sm font-bold mb-4 flex items-center gap-1 text-gray-500 hover:text-black transition">
-                    stoc-pro-source.com <ArrowUpRight size={14} />
-                </a>
+                {/* Innovation: Match Score & Verification (Replaced Source URL) */}
+                <div className="flex items-center gap-4 mb-6">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
+                        <Sparkles size={12} /> 98% Visual Match
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-gray-500 bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
+                        <BadgeCheck size={12} className="text-blue-500" /> Verified Creator
+                    </div>
+                </div>
+
                 <h1 className="text-4xl font-extrabold mb-4 text-gray-900 leading-tight">{pin.title}</h1>
                 <p className="text-gray-600 text-lg mb-8 leading-relaxed">{pin.description}</p>
 
@@ -111,7 +137,7 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
                         <button 
                             key={i} 
                             onClick={() => { onClose(); onTagClick(tag); }}
-                            className="px-4 py-2 bg-gray-100 rounded-full font-bold text-gray-600 hover:bg-emerald-50 hover:text-emerald-700 transition"
+                            className="px-4 py-2 bg-gray-100 rounded-full font-bold text-gray-600 hover:bg-emerald-500 hover:text-white transition shadow-sm"
                         >
                             #{tag}
                         </button>
@@ -119,10 +145,13 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
                 </div>
 
                 {/* Author Card */}
-                <div className="flex items-center gap-4 mb-8 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                <div className="flex items-center gap-4 mb-8 p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-emerald-200 transition-colors cursor-pointer group">
                     <img src={pin.author.avatarUrl} alt={pin.author.username} className="w-14 h-14 rounded-full border border-white shadow-sm" />
                     <div className="flex-1">
-                        <p className="font-bold text-gray-900 text-lg">{pin.author.username}</p>
+                        <div className="flex items-center gap-1">
+                            <p className="font-bold text-gray-900 text-lg group-hover:text-emerald-700 transition">{pin.author.username}</p>
+                            <BadgeCheck size={16} className="text-blue-500" />
+                        </div>
                         <p className="text-sm text-gray-500">{pin.author.followers.toLocaleString()} followers</p>
                     </div>
                     <button className="px-6 py-2 bg-gray-200 rounded-full font-bold hover:bg-black hover:text-white transition">Follow</button>
@@ -206,7 +235,7 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
                         </div>
                     ))}
                 </div>
-                <button className="w-full py-4 mt-4 bg-white border border-gray-300 rounded-full font-bold hover:bg-gray-100 transition">
+                <button className="w-full py-4 mt-4 bg-white border border-gray-300 rounded-full font-bold hover:bg-gray-100 transition text-gray-900">
                     See more
                 </button>
             </div>

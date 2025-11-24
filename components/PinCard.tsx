@@ -1,5 +1,5 @@
 import React, { useState, useRef, MouseEvent } from 'react';
-import { Share2, MoreHorizontal, ChevronDown, Check, ScanSearch, Archive, Heart, Hash } from 'lucide-react';
+import { Share2, MoreHorizontal, ChevronDown, Check, ScanSearch, Archive, Heart, Hash, Eye, TrendingUp } from 'lucide-react';
 import { Pin, Board } from '../types';
 
 interface PinCardProps {
@@ -22,9 +22,11 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
   const [isSaved, setIsSaved] = useState(false);
   const [showBoardSelect, setShowBoardSelect] = useState(false);
   const [showHeart, setShowHeart] = useState(false);
+  const [isPeeking, setIsPeeking] = useState(false);
   
-  // 3D Tilt State
+  // 3D Tilt & Peek State
   const cardRef = useRef<HTMLDivElement>(null);
+  const peekTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [rotation, setRotation] = useState({ x: 0, y: 0 });
   
   const defaultBoard = boards[0];
@@ -77,7 +79,7 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
 
   // 3D Tilt Logic
   const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
-      if (!cardRef.current) return;
+      if (!cardRef.current || isPeeking) return;
       
       const rect = cardRef.current.getBoundingClientRect();
       const x = e.clientX - rect.left;
@@ -92,17 +94,27 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
       setRotation({ x: rotateX, y: rotateY });
   };
 
+  const handleMouseEnter = () => {
+      setIsHovered(true);
+      // Innovation: Hold to Peek
+      peekTimeout.current = setTimeout(() => {
+          setIsPeeking(true);
+      }, 800);
+  }
+
   const handleMouseLeave = () => {
       setIsHovered(false);
       setShowBoardSelect(false);
       setRotation({ x: 0, y: 0 });
+      if (peekTimeout.current) clearTimeout(peekTimeout.current);
+      setIsPeeking(false);
   };
 
   return (
     <div 
       ref={cardRef}
-      className="relative mb-6 break-inside-avoid rounded-[32px] cursor-zoom-in group perspective-1000"
-      onMouseEnter={() => setIsHovered(true)}
+      className="relative mb-6 break-inside-avoid rounded-[32px] cursor-zoom-in group perspective-1000 z-0 hover:z-20"
+      onMouseEnter={handleMouseEnter}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       onClick={() => onClick(pin)}
@@ -112,9 +124,9 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
       }}
     >
       <div 
-        className="relative w-full h-full rounded-[32px] overflow-hidden bg-gray-100 transition-transform duration-100 ease-out shadow-lg hover:shadow-2xl"
+        className="relative w-full h-full rounded-[32px] overflow-hidden bg-gray-100 transition-all duration-300 ease-out shadow-lg group-hover:shadow-[0_20px_50px_rgba(0,0,0,0.15)]"
         style={{
-            transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) scale(${isHovered ? 1.02 : 1})`,
+            transform: isPeeking ? 'scale(1.05) translateY(-10px)' : `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) scale(${isHovered ? 1.02 : 1})`,
             transformStyle: 'preserve-3d'
         }}
       >
@@ -124,32 +136,53 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
             className="w-full h-auto object-cover pointer-events-none transition-all duration-700 ease-in-out"
             style={{ 
                 aspectRatio: `${pin.width} / ${pin.height}`,
-                filter: isHovered ? 'brightness(0.85) saturate(1.1)' : 'none',
+                filter: isHovered && !isPeeking ? 'brightness(0.7) contrast(1.1)' : 'none',
             }}
             loading="lazy"
           />
           
           {/* Double Click Heart Animation */}
           <div className={`absolute inset-0 flex items-center justify-center pointer-events-none z-30 transition-all duration-300 ${showHeart ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}`}>
-             <Heart size={80} className="fill-white text-white drop-shadow-2xl animate-bounce" />
+             <Heart size={80} className="fill-emerald-500 text-emerald-500 drop-shadow-2xl animate-bounce" />
           </div>
 
-          {/* Overlay - Only visible on hover */}
+          {/* Peek Overlay (Stats) - Appears on Long Hover */}
+          <div className={`absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-white transition-opacity duration-300 ${isPeeking ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+             <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center mb-4 animate-bounce">
+                <Eye size={32} className="text-emerald-400" />
+             </div>
+             <h3 className="font-bold text-xl mb-2 text-center">{pin.title}</h3>
+             <div className="flex gap-4 mt-2">
+                 <div className="text-center">
+                     <p className="text-xs text-gray-400 font-bold uppercase">Views</p>
+                     <p className="font-mono text-lg font-bold text-emerald-300">{(pin.likes * 12).toLocaleString()}</p>
+                 </div>
+                 <div className="text-center">
+                     <p className="text-xs text-gray-400 font-bold uppercase">Saves</p>
+                     <p className="font-mono text-lg font-bold text-emerald-300">{pin.likes.toLocaleString()}</p>
+                 </div>
+             </div>
+             <div className="mt-6 flex items-center gap-1 text-emerald-400 text-sm font-bold">
+                 <TrendingUp size={16} /> Rising Trend
+             </div>
+          </div>
+
+          {/* Standard Overlay - Visible on Hover */}
           <div 
-            className={`absolute inset-0 flex flex-col justify-between p-4 transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}
+            className={`absolute inset-0 flex flex-col justify-between p-4 transition-opacity duration-300 ${isHovered && !isPeeking ? 'opacity-100' : 'opacity-0'}`}
           >
               
               {/* Top Section */}
               <div className="flex justify-between items-start relative z-20 translate-z-20" style={{ transform: 'translateZ(20px)' }}>
                  
                  {/* Board Indicator */}
-                 <div className="text-white drop-shadow-md font-bold text-sm flex items-center opacity-0 group-hover:opacity-100 transition-all delay-100 translate-y-[-10px] group-hover:translate-y-0 bg-black/20 backdrop-blur-md px-3 py-1 rounded-full">
+                 <div className="text-white drop-shadow-md font-bold text-sm flex items-center opacity-0 group-hover:opacity-100 transition-all delay-100 translate-y-[-10px] group-hover:translate-y-0 bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
                      <span className="max-w-[100px] truncate">{selectedBoard?.title || 'Profile'}</span>
                      <ChevronDown size={14} className="ml-1" />
                  </div>
 
                  {/* Split Quick Save Button */}
-                 <div className="relative flex items-center shadow-2xl rounded-full overflow-hidden transition-transform active:scale-95 group-hover:translate-y-0 translate-y-[-10px] border border-white/20">
+                 <div className="relative flex items-center shadow-2xl rounded-full overflow-hidden transition-transform active:scale-95 group-hover:translate-y-0 translate-y-[-10px] ring-1 ring-white/20">
                     <button 
                       className={`px-5 py-3 font-bold text-sm transition-all duration-300 flex items-center gap-2
                         ${isSaved 
@@ -236,15 +269,15 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
                  </div>
 
                  <div className="flex justify-between items-end gap-2">
-                    {/* Interactive Tags (Replaced Source URL) */}
-                    <div className="flex flex-wrap gap-1 max-w-[70%]">
+                    {/* Interactive Tags (Replaces Source) */}
+                    <div className="flex flex-wrap gap-1.5 max-w-[75%]">
                         {pin.tags.slice(0, 3).map((tag, idx) => (
                             <button
                                 key={idx}
                                 onClick={(e) => handleTagClick(e, tag)}
-                                className="px-2 py-1 bg-white/20 backdrop-blur-md rounded-lg text-[10px] font-bold text-white hover:bg-white hover:text-emerald-700 transition-all border border-white/10 flex items-center gap-1 hover:scale-105 shadow-sm"
+                                className="px-2.5 py-1 bg-black/40 backdrop-blur-md rounded-full text-[11px] font-bold text-white hover:bg-emerald-500 hover:text-white transition-all border border-white/10 flex items-center gap-1 hover:scale-105 shadow-sm active:scale-95"
                             >
-                                <Hash size={10} /> {tag}
+                                <Hash size={10} className="opacity-70" /> {tag}
                             </button>
                         ))}
                     </div>

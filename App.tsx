@@ -6,7 +6,7 @@ import { Profile } from './components/Profile';
 import { BoardDetail } from './components/BoardDetail';
 import { Pin, User, Board, ViewState, Filter } from './types';
 import { generatePinDetails, getPersonalizedTopics } from './services/geminiService';
-import { Wand2, Plus, SlidersHorizontal, ArrowUp, ScanLine, Loader2, Archive, X, ArrowRight } from 'lucide-react';
+import { Wand2, Plus, SlidersHorizontal, ArrowUp, ScanLine, Loader2, Archive, X, ArrowRight, Zap, Play } from 'lucide-react';
 
 const DEFAULT_TOPICS = [
   "Eco Brutalism", "Neon Cyberpunk", "Sustainable Fashion", "Parametric Architecture", 
@@ -355,20 +355,45 @@ const App: React.FC = () => {
           case ViewState.HOME:
           default:
               return (
-                  <div className="masonry-grid pb-24 animate-in fade-in duration-500">
-                      {homePins.map(pin => (
-                          <PinCard 
-                            key={pin.id} 
-                            pin={pin} 
-                            onClick={handlePinClick} 
-                            onSave={handleSavePin} 
-                            onMoreLikeThis={handleMoreLikeThis} 
-                            onStash={handleAddToStash} 
-                            onTagClick={handleSearch}
-                            boards={boards} 
-                          />
-                      ))}
-                  </div>
+                  <>
+                      {/* Sparks / Stories Bar (Innovation) */}
+                      <div className="mb-10 overflow-x-auto scrollbar-hide">
+                         <div className="flex gap-6 px-2">
+                             <div className="flex flex-col items-center gap-2 cursor-pointer group">
+                                 <div className="w-20 h-20 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center group-hover:border-emerald-500 transition-colors">
+                                     <Plus size={28} className="text-gray-400 group-hover:text-emerald-500" />
+                                 </div>
+                                 <span className="text-xs font-bold text-gray-500">Add Spark</span>
+                             </div>
+                             {[1,2,3,4,5,6,7].map(i => (
+                                 <div key={i} className="flex flex-col items-center gap-2 cursor-pointer group">
+                                     <div className="relative w-20 h-20 p-[3px] rounded-full bg-gradient-to-tr from-emerald-400 via-teal-400 to-lime-400">
+                                         <div className="w-full h-full rounded-full border-2 border-white overflow-hidden bg-white">
+                                             <img src={`https://picsum.photos/seed/user${i}/100/100`} className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
+                                         </div>
+                                         {i === 1 && <div className="absolute bottom-0 right-0 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-white animate-pulse">LIVE</div>}
+                                     </div>
+                                     <span className="text-xs font-bold text-gray-600 group-hover:text-emerald-600">User_{i}</span>
+                                 </div>
+                             ))}
+                         </div>
+                      </div>
+
+                      <div className="masonry-grid pb-24 animate-in fade-in duration-500">
+                          {homePins.map(pin => (
+                              <PinCard 
+                                key={pin.id} 
+                                pin={pin} 
+                                onClick={handlePinClick} 
+                                onSave={handleSavePin} 
+                                onMoreLikeThis={handleMoreLikeThis} 
+                                onStash={handleAddToStash} 
+                                onTagClick={handleSearch}
+                                boards={boards} 
+                              />
+                          ))}
+                      </div>
+                  </>
               );
       }
   };
@@ -391,10 +416,16 @@ const App: React.FC = () => {
       {viewState === ViewState.HOME && (
           <div className="fixed top-[84px] left-0 right-0 z-40 py-3 transition-all">
              <div className="flex items-center gap-2 overflow-x-auto px-4 scrollbar-hide max-w-[1920px] mx-auto">
-                {["For You", ...DEFAULT_TOPICS.slice(0, 10)].map((cat, i) => (
+                <button 
+                    className="px-5 py-2.5 rounded-full font-bold text-sm whitespace-nowrap transition-all duration-300 backdrop-blur-md border border-white/20 shadow-sm bg-black text-white hover:scale-105"
+                    onClick={() => setActiveCategory("For You")}
+                >
+                    For You
+                </button>
+                {DEFAULT_TOPICS.slice(0, 10).map((cat, i) => (
                     <button 
                         key={i}
-                        onClick={() => setActiveCategory(cat)}
+                        onClick={() => { setActiveCategory(cat); handleSearch(cat); }}
                         className={`px-5 py-2.5 rounded-full font-bold text-sm whitespace-nowrap transition-all duration-300 backdrop-blur-md border border-white/20 shadow-sm
                             ${activeCategory === cat 
                                 ? 'bg-black text-white transform scale-105' 
@@ -460,14 +491,14 @@ const App: React.FC = () => {
           </div>
       </div>
 
-      {/* Floating Action Button - Refresh Feed */}
+      {/* Floating Action Button - Refresh Feed (Magic Shuffle) */}
       <div className={`fixed bottom-8 right-8 z-40 flex flex-col gap-4 items-end transition-transform duration-300 ${showStash ? '-translate-y-64' : 'translate-y-0'}`}>
          <button 
             className="w-16 h-16 bg-gradient-to-tr from-emerald-500 to-teal-600 rounded-full flex items-center justify-center text-white shadow-2xl hover:scale-110 hover:rotate-90 transition-all duration-500 group"
             onClick={() => loadPersonalizedFeed()}
-            title="Refresh Feed"
+            title="Shuffle Feed"
          >
-             <Wand2 size={28} className="group-hover:text-lime-200" />
+             <Zap size={28} className="group-hover:text-lime-200 fill-white" />
          </button>
       </div>
 
@@ -487,6 +518,14 @@ const App: React.FC = () => {
           10% { opacity: 1; }
           90% { opacity: 1; }
           100% { top: 100%; opacity: 0; }
+        }
+        @keyframes shine {
+            0% { transform: translateX(-100%); }
+            20% { transform: translateX(100%); }
+            100% { transform: translateX(100%); }
+        }
+        .zen-mode header, .zen-mode .fixed.bottom-0, .zen-mode .fixed.bottom-8 {
+            /* Handled by component logic mostly, but CSS class helps with body scroll etc */
         }
       `}</style>
     </div>
