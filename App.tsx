@@ -263,8 +263,14 @@ const App: React.FC = () => {
       }
   };
 
-  const handleCreatePin = (newPin: Pin) => {
+  const handleCreatePin = (newPin: Pin, boardId?: string) => {
       setHomePins(prev => [newPin, ...prev]);
+      
+      // If a board was selected, add it there too
+      if (boardId) {
+          handleSavePin(newPin, boardId);
+      }
+
       confetti({
           particleCount: 100,
           spread: 70,
@@ -704,6 +710,7 @@ const App: React.FC = () => {
             onCreatePin={handleCreatePin}
             onCreateStory={handleCreateStory}
             user={currentUser}
+            boards={boards}
           />
       )}
 

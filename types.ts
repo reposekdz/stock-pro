@@ -20,6 +20,13 @@ export interface Comment {
   timestamp: string;
 }
 
+export interface ImageEditSettings {
+  brightness: number;
+  contrast: number;
+  saturation: number;
+  filter: string; // 'none' | 'vivid' | 'noir' | 'vintage' ...
+}
+
 export interface Pin {
   id: string;
   title: string;
@@ -31,6 +38,9 @@ export interface Pin {
   tags: string[];
   likes: number;
   comments?: Comment[];
+  location?: string;
+  scheduledFor?: string;
+  editSettings?: ImageEditSettings; // Store visual edits
 }
 
 export interface Board {
