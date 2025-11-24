@@ -9,7 +9,7 @@ import { SettingsModal } from './components/SettingsModal';
 import { BoardDetail } from './components/BoardDetail';
 import { StoryViewer } from './components/StoryViewer';
 import { CreateModal } from './components/CreateModal';
-import { Pin, User, Board, ViewState, Filter, Story } from './types';
+import { Pin, User, Board, ViewState, Filter, Story, Collaborator } from './types';
 import { generatePinDetails, getPersonalizedTopics } from './services/geminiService';
 import { Wand2, Plus, SlidersHorizontal, ArrowUp, ScanLine, Loader2, Archive, X, ArrowRight, Zap, Play, ChevronLeft, ChevronRight, Palette, Layout, Sparkles, RefreshCw, Layers, Settings as SettingsIcon } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -45,7 +45,25 @@ const generateMockBoards = (userId: string): Board[] => [
         title: 'Green Living',
         pins: [],
         isPrivate: false,
-        collaborators: [{...generateMockUser(), role: 'owner'}],
+        collaborators: [
+            {...generateMockUser(), role: 'owner'},
+            { 
+                id: 'c1', 
+                username: 'PlantMom', 
+                avatarUrl: 'https://picsum.photos/seed/plantmom/100/100', 
+                followers: 120, 
+                following: 40, 
+                role: 'editor' 
+            },
+            { 
+                id: 'c2', 
+                username: 'EcoArch', 
+                avatarUrl: 'https://picsum.photos/seed/ecoarch/100/100', 
+                followers: 500, 
+                following: 200, 
+                role: 'viewer' 
+            }
+        ],
         createdAt: new Date().toISOString()
     },
 ];
@@ -246,9 +264,33 @@ const App: React.FC = () => {
       setBoards([...boards, newBoard]);
   };
 
-  const handleInviteToBoard = (email: string) => {
+  const handleInviteToBoard = (email: string, role: 'editor' | 'viewer') => {
       if(!selectedBoard) return;
-      alert(`Invitation sent to ${email}!`);
+      
+      const newCollaborator: Collaborator = {
+          id: `collab-${Date.now()}`,
+          username: email.split('@')[0],
+          avatarUrl: `https://picsum.photos/seed/${email}/100/100`,
+          email: email,
+          followers: 0,
+          following: 0,
+          role: role
+      };
+
+      const updatedBoard = {
+          ...selectedBoard,
+          collaborators: [...selectedBoard.collaborators, newCollaborator]
+      };
+
+      setBoards(prev => prev.map(b => b.id === selectedBoard.id ? updatedBoard : b));
+      setSelectedBoard(updatedBoard);
+
+      confetti({
+          particleCount: 150,
+          spread: 80,
+          origin: { y: 0.3 },
+          colors: ['#34d399', '#60a5fa', '#f472b6']
+      });
   };
 
   const handleMoreLikeThis = (pin: Pin) => {

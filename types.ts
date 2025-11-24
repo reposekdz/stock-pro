@@ -1,5 +1,6 @@
 
 
+
 export interface User {
   id: string;
   username: string;
@@ -12,6 +13,7 @@ export interface User {
 
 export interface Collaborator extends User {
   role: 'owner' | 'editor' | 'viewer';
+  email?: string; // Added for invite logic
 }
 
 export interface Comment {
