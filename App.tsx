@@ -278,7 +278,16 @@ const App: React.FC = () => {
                               <h2 className="text-2xl font-bold mb-6 px-2">Visual Matches</h2>
                               <div className="masonry-grid pb-24">
                                   {searchPins.map(pin => (
-                                      <PinCard key={pin.id} pin={pin} onClick={handlePinClick} onSave={handleSavePin} onMoreLikeThis={handleMoreLikeThis} onStash={handleAddToStash} boards={boards} />
+                                      <PinCard 
+                                        key={pin.id} 
+                                        pin={pin} 
+                                        onClick={handlePinClick} 
+                                        onSave={handleSavePin} 
+                                        onMoreLikeThis={handleMoreLikeThis} 
+                                        onStash={handleAddToStash} 
+                                        onTagClick={handleSearch}
+                                        boards={boards} 
+                                      />
                                   ))}
                               </div>
                           </div>
@@ -328,7 +337,16 @@ const App: React.FC = () => {
                     </div>
                     <div className="masonry-grid pb-24">
                         {searchPins.map(pin => (
-                            <PinCard key={pin.id} pin={pin} onClick={handlePinClick} onSave={handleSavePin} onMoreLikeThis={handleMoreLikeThis} onStash={handleAddToStash} boards={boards} />
+                            <PinCard 
+                                key={pin.id} 
+                                pin={pin} 
+                                onClick={handlePinClick} 
+                                onSave={handleSavePin} 
+                                onMoreLikeThis={handleMoreLikeThis} 
+                                onStash={handleAddToStash} 
+                                onTagClick={handleSearch}
+                                boards={boards} 
+                            />
                         ))}
                     </div>
                   </>
@@ -339,7 +357,16 @@ const App: React.FC = () => {
               return (
                   <div className="masonry-grid pb-24 animate-in fade-in duration-500">
                       {homePins.map(pin => (
-                          <PinCard key={pin.id} pin={pin} onClick={handlePinClick} onSave={handleSavePin} onMoreLikeThis={handleMoreLikeThis} onStash={handleAddToStash} boards={boards} />
+                          <PinCard 
+                            key={pin.id} 
+                            pin={pin} 
+                            onClick={handlePinClick} 
+                            onSave={handleSavePin} 
+                            onMoreLikeThis={handleMoreLikeThis} 
+                            onStash={handleAddToStash} 
+                            onTagClick={handleSearch}
+                            boards={boards} 
+                          />
                       ))}
                   </div>
               );
@@ -450,6 +477,7 @@ const App: React.FC = () => {
           onClose={() => setSelectedPin(null)} 
           relatedPins={generateMockPins(10, selectedPin.tags[0])}
           boards={boards}
+          onTagClick={handleSearch}
         />
       )}
       

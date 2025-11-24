@@ -9,9 +9,10 @@ interface PinDetailProps {
   onClose: () => void;
   relatedPins: Pin[]; // Passed for the related grid
   boards: Board[];
+  onTagClick: (tag: string) => void;
 }
 
-export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins, boards }) => {
+export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins, boards, onTagClick }) => {
   const [comments, setComments] = useState<Comment[]>(pin.comments || []);
   const [loadingComments, setLoadingComments] = useState(false);
   const [newComment, setNewComment] = useState("");
@@ -104,6 +105,19 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
                 <h1 className="text-4xl font-extrabold mb-4 text-gray-900 leading-tight">{pin.title}</h1>
                 <p className="text-gray-600 text-lg mb-8 leading-relaxed">{pin.description}</p>
 
+                {/* Tags in Detail View */}
+                <div className="flex flex-wrap gap-2 mb-8">
+                    {pin.tags.map((tag, i) => (
+                        <button 
+                            key={i} 
+                            onClick={() => { onClose(); onTagClick(tag); }}
+                            className="px-4 py-2 bg-gray-100 rounded-full font-bold text-gray-600 hover:bg-emerald-50 hover:text-emerald-700 transition"
+                        >
+                            #{tag}
+                        </button>
+                    ))}
+                </div>
+
                 {/* Author Card */}
                 <div className="flex items-center gap-4 mb-8 p-4 bg-gray-50 rounded-2xl border border-gray-100">
                     <img src={pin.author.avatarUrl} alt={pin.author.username} className="w-14 h-14 rounded-full border border-white shadow-sm" />
@@ -180,7 +194,15 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
                 <div className="grid grid-cols-2 gap-4">
                     {relatedPins.slice(0, 6).map(related => (
                         <div key={related.id} className="break-inside-avoid">
-                            <PinCard pin={related} onClick={() => {}} onSave={() => {}} boards={boards} />
+                            <PinCard 
+                                pin={related} 
+                                onClick={() => {}} 
+                                onSave={() => {}} 
+                                onMoreLikeThis={() => {}}
+                                onStash={() => {}}
+                                onTagClick={onTagClick}
+                                boards={boards} 
+                            />
                         </div>
                     ))}
                 </div>

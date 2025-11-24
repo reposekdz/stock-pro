@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Share2, MoreHorizontal, ArrowUpRight, ChevronDown, Check, ScanSearch, Archive } from 'lucide-react';
+import React, { useState, useRef, MouseEvent } from 'react';
+import { Share2, MoreHorizontal, ChevronDown, Check, ScanSearch, Archive, Heart, Hash } from 'lucide-react';
 import { Pin, Board } from '../types';
 
 interface PinCardProps {
@@ -8,6 +8,7 @@ interface PinCardProps {
   onSave: (pin: Pin, boardId?: string) => void;
   onMoreLikeThis: (pin: Pin) => void;
   onStash: (pin: Pin) => void;
+  onTagClick: (tag: string) => void;
   boards: Board[];
 }
 
@@ -16,10 +17,15 @@ const MOCK_PALETTE = [
     "#2D3436", "#00B894", "#55EFC4", "#81ECEC", "#74B9FF"
 ];
 
-export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLikeThis, onStash, boards }) => {
+export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLikeThis, onStash, onTagClick, boards }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [showBoardSelect, setShowBoardSelect] = useState(false);
+  const [showHeart, setShowHeart] = useState(false);
+  
+  // 3D Tilt State
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [rotation, setRotation] = useState({ x: 0, y: 0 });
   
   const defaultBoard = boards[0];
   const [selectedBoard, setSelectedBoard] = useState<Board | null>(defaultBoard || null);
@@ -56,140 +62,203 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
       onStash(pin);
   }
 
+  const handleTagClick = (e: React.MouseEvent, tag: string) => {
+      e.stopPropagation();
+      onTagClick(tag);
+  }
+
+  // Double Click to Like Innovation
+  const handleDoubleClick = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setShowHeart(true);
+      if(!isSaved) handleQuickSave(e);
+      setTimeout(() => setShowHeart(false), 1000);
+  }
+
+  // 3D Tilt Logic
+  const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
+      if (!cardRef.current) return;
+      
+      const rect = cardRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+      
+      const rotateX = ((y - centerY) / centerY) * -5; // Max 5deg rotation
+      const rotateY = ((x - centerX) / centerX) * 5;
+
+      setRotation({ x: rotateX, y: rotateY });
+  };
+
+  const handleMouseLeave = () => {
+      setIsHovered(false);
+      setShowBoardSelect(false);
+      setRotation({ x: 0, y: 0 });
+  };
+
   return (
     <div 
-      className="relative mb-6 break-inside-avoid rounded-[32px] cursor-zoom-in overflow-hidden group transition-all duration-500 ease-out hover:shadow-2xl hover:-translate-y-1 bg-gray-100"
+      ref={cardRef}
+      className="relative mb-6 break-inside-avoid rounded-[32px] cursor-zoom-in group perspective-1000"
       onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => { setIsHovered(false); setShowBoardSelect(false); }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
       onClick={() => onClick(pin)}
+      onDoubleClick={handleDoubleClick}
+      style={{
+          perspective: '1000px'
+      }}
     >
-      <img 
-        src={pin.imageUrl} 
-        alt={pin.title}
-        className="w-full h-auto object-cover rounded-[32px] pointer-events-none transition-all duration-700 ease-in-out"
-        style={{ 
-            aspectRatio: `${pin.width} / ${pin.height}`,
-            filter: isHovered ? 'brightness(0.85) saturate(1.1)' : 'none',
-            transform: isHovered ? 'scale(1.05)' : 'scale(1)'
-        }}
-        loading="lazy"
-      />
-      
-      {/* Overlay - Only visible on hover */}
       <div 
-        className={`absolute inset-0 flex flex-col justify-between p-4 transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}
+        className="relative w-full h-full rounded-[32px] overflow-hidden bg-gray-100 transition-transform duration-100 ease-out shadow-lg hover:shadow-2xl"
+        style={{
+            transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) scale(${isHovered ? 1.02 : 1})`,
+            transformStyle: 'preserve-3d'
+        }}
       >
+          <img 
+            src={pin.imageUrl} 
+            alt={pin.title}
+            className="w-full h-auto object-cover pointer-events-none transition-all duration-700 ease-in-out"
+            style={{ 
+                aspectRatio: `${pin.width} / ${pin.height}`,
+                filter: isHovered ? 'brightness(0.85) saturate(1.1)' : 'none',
+            }}
+            loading="lazy"
+          />
           
-          {/* Top Section */}
-          <div className="flex justify-between items-start relative z-20">
-             
-             {/* Board Indicator */}
-             <div className="text-white drop-shadow-md font-bold text-sm flex items-center opacity-0 group-hover:opacity-100 transition-all delay-100 translate-y-[-10px] group-hover:translate-y-0 bg-black/20 backdrop-blur-md px-3 py-1 rounded-full">
-                 <span className="max-w-[100px] truncate">{selectedBoard?.title || 'Profile'}</span>
-                 <ChevronDown size={14} className="ml-1" />
-             </div>
-
-             {/* Split Quick Save Button */}
-             <div className="relative flex items-center shadow-2xl rounded-full overflow-hidden transition-transform active:scale-95 group-hover:translate-y-0 translate-y-[-10px] border border-white/20">
-                <button 
-                  className={`px-5 py-3 font-bold text-sm transition-all duration-300 flex items-center gap-2
-                    ${isSaved 
-                        ? 'bg-black text-white' 
-                        : 'bg-gradient-to-br from-emerald-500 via-teal-500 to-teal-600 text-white hover:from-emerald-400 hover:to-teal-500'}`}
-                  onClick={handleQuickSave}
-                >
-                  {isSaved ? 'Saved' : 'Save'}
-                  {isSaved && <Check size={14} className="animate-in zoom-in spin-in-90 duration-300" />}
-                </button>
-                <button 
-                    className={`p-3 border-l border-white/10 ${isSaved 
-                        ? 'bg-black text-white hover:bg-gray-800' 
-                        : 'bg-gradient-to-br from-teal-600 to-teal-700 text-white hover:brightness-110'}`}
-                    onClick={handleBoardSelectClick}
-                >
-                    <ChevronDown size={16} />
-                </button>
-
-                {/* Dropdown Menu */}
-                {showBoardSelect && (
-                    <div className="absolute top-full right-0 mt-3 bg-white rounded-2xl shadow-2xl py-2 w-60 z-50 animate-in fade-in slide-in-from-top-2 border border-gray-100">
-                        <div className="px-4 py-2 border-b border-gray-100">
-                            <p className="text-xs text-gray-500 font-bold uppercase">Save to board</p>
-                        </div>
-                        <div className="max-h-60 overflow-y-auto scrollbar-thin">
-                            {boards.map(board => (
-                                <button 
-                                    key={board.id} 
-                                    className="w-full text-left px-4 py-3 hover:bg-emerald-50 text-sm font-medium text-gray-900 truncate flex justify-between group/item transition-colors"
-                                    onClick={(e) => handleBoardChoice(e, board)}
-                                >
-                                    {board.title}
-                                    {board.id === selectedBoard?.id && <Check size={14} className="text-emerald-600"/>}
-                                </button>
-                            ))}
-                        </div>
-                        <div className="px-3 py-2 border-t border-gray-100">
-                             <button className="w-full py-2 bg-gray-100 rounded-lg text-xs font-bold hover:bg-gray-200">Create Board</button>
-                        </div>
-                    </div>
-                )}
-             </div>
+          {/* Double Click Heart Animation */}
+          <div className={`absolute inset-0 flex items-center justify-center pointer-events-none z-30 transition-all duration-300 ${showHeart ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}`}>
+             <Heart size={80} className="fill-white text-white drop-shadow-2xl animate-bounce" />
           </div>
 
-          {/* Middle - Innovation Actions */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex gap-3 scale-0 group-hover:scale-100 transition-transform duration-300 delay-100">
-                <button 
-                    onClick={handleMoreLikeThisClick}
-                    className="p-4 bg-white/20 backdrop-blur-lg rounded-full text-white hover:bg-emerald-500 hover:scale-110 transition-all shadow-lg border border-white/30 group/btn"
-                    title="Find similar ideas"
-                >
-                    <ScanSearch size={24} className="group-hover/btn:animate-pulse" />
-                </button>
-                <button 
-                    onClick={handleStashClick}
-                    className="p-4 bg-white/20 backdrop-blur-lg rounded-full text-white hover:bg-emerald-500 hover:scale-110 transition-all shadow-lg border border-white/30"
-                    title="Add to Stash"
-                >
-                    <Archive size={24} />
-                </button>
-          </div>
+          {/* Overlay - Only visible on hover */}
+          <div 
+            className={`absolute inset-0 flex flex-col justify-between p-4 transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}
+          >
+              
+              {/* Top Section */}
+              <div className="flex justify-between items-start relative z-20 translate-z-20" style={{ transform: 'translateZ(20px)' }}>
+                 
+                 {/* Board Indicator */}
+                 <div className="text-white drop-shadow-md font-bold text-sm flex items-center opacity-0 group-hover:opacity-100 transition-all delay-100 translate-y-[-10px] group-hover:translate-y-0 bg-black/20 backdrop-blur-md px-3 py-1 rounded-full">
+                     <span className="max-w-[100px] truncate">{selectedBoard?.title || 'Profile'}</span>
+                     <ChevronDown size={14} className="ml-1" />
+                 </div>
 
-          {/* Bottom Section */}
-          <div className="flex flex-col gap-3 translate-y-4 group-hover:translate-y-0 transition-transform duration-300 delay-75">
-             
-             {/* Innovation: Palette Extractor */}
-             <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-200">
-                 {MOCK_PALETTE.map((color, i) => (
-                     <div 
-                        key={i} 
-                        className="w-4 h-4 rounded-full shadow-md border border-white/20 hover:scale-150 transition-transform cursor-pointer"
-                        style={{ backgroundColor: color }}
-                        title={`Filter by ${color}`}
-                        onClick={(e) => { e.stopPropagation(); /* Trigger color filter logic */ }}
-                     ></div>
-                 ))}
-             </div>
+                 {/* Split Quick Save Button */}
+                 <div className="relative flex items-center shadow-2xl rounded-full overflow-hidden transition-transform active:scale-95 group-hover:translate-y-0 translate-y-[-10px] border border-white/20">
+                    <button 
+                      className={`px-5 py-3 font-bold text-sm transition-all duration-300 flex items-center gap-2
+                        ${isSaved 
+                            ? 'bg-black text-white' 
+                            : 'bg-gradient-to-br from-emerald-500 via-teal-500 to-teal-600 text-white hover:from-emerald-400 hover:to-teal-500'}`}
+                      onClick={handleQuickSave}
+                    >
+                      {isSaved ? 'Saved' : 'Save'}
+                      {isSaved && <Check size={14} className="animate-in zoom-in spin-in-90 duration-300" />}
+                    </button>
+                    <button 
+                        className={`p-3 border-l border-white/10 ${isSaved 
+                            ? 'bg-black text-white hover:bg-gray-800' 
+                            : 'bg-gradient-to-br from-teal-600 to-teal-700 text-white hover:brightness-110'}`}
+                        onClick={handleBoardSelectClick}
+                    >
+                        <ChevronDown size={16} />
+                    </button>
 
-             <div className="flex justify-between items-center gap-2">
-                <a 
-                href="#" 
-                className="flex items-center gap-2 bg-white/90 backdrop-blur-xl hover:bg-white px-3 py-2 rounded-full text-xs font-bold truncate max-w-[140px] text-black shadow-lg transition-all hover:scale-105"
-                onClick={(e) => e.stopPropagation()}
-                >
-                    <div className="p-1 bg-gray-200 rounded-full">
-                        <ArrowUpRight size={10} />
+                    {/* Dropdown Menu */}
+                    {showBoardSelect && (
+                        <div className="absolute top-full right-0 mt-3 bg-white rounded-2xl shadow-2xl py-2 w-60 z-50 animate-in fade-in slide-in-from-top-2 border border-gray-100">
+                            <div className="px-4 py-2 border-b border-gray-100">
+                                <p className="text-xs text-gray-500 font-bold uppercase">Save to board</p>
+                            </div>
+                            <div className="max-h-60 overflow-y-auto scrollbar-thin">
+                                {boards.map(board => (
+                                    <button 
+                                        key={board.id} 
+                                        className="w-full text-left px-4 py-3 hover:bg-emerald-50 text-sm font-medium text-gray-900 truncate flex justify-between group/item transition-colors"
+                                        onClick={(e) => handleBoardChoice(e, board)}
+                                    >
+                                        {board.title}
+                                        {board.id === selectedBoard?.id && <Check size={14} className="text-emerald-600"/>}
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="px-3 py-2 border-t border-gray-100">
+                                 <button className="w-full py-2 bg-gray-100 rounded-lg text-xs font-bold hover:bg-gray-200">Create Board</button>
+                            </div>
+                        </div>
+                    )}
+                 </div>
+              </div>
+
+              {/* Middle - Innovation Actions */}
+              <div 
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex gap-3 scale-0 group-hover:scale-100 transition-transform duration-300 delay-100"
+                  style={{ transform: 'translate(-50%, -50%) translateZ(30px)' }}
+              >
+                    <button 
+                        onClick={handleMoreLikeThisClick}
+                        className="p-4 bg-white/20 backdrop-blur-lg rounded-full text-white hover:bg-emerald-500 hover:scale-110 transition-all shadow-lg border border-white/30 group/btn"
+                        title="Find similar ideas"
+                    >
+                        <ScanSearch size={24} className="group-hover/btn:animate-pulse" />
+                    </button>
+                    <button 
+                        onClick={handleStashClick}
+                        className="p-4 bg-white/20 backdrop-blur-lg rounded-full text-white hover:bg-emerald-500 hover:scale-110 transition-all shadow-lg border border-white/30"
+                        title="Add to Stash"
+                    >
+                        <Archive size={24} />
+                    </button>
+              </div>
+
+              {/* Bottom Section */}
+              <div 
+                  className="flex flex-col gap-3 translate-y-4 group-hover:translate-y-0 transition-transform duration-300 delay-75"
+                  style={{ transform: 'translateZ(20px)' }}
+               >
+                 
+                 {/* Innovation: Palette Extractor */}
+                 <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-200">
+                     {MOCK_PALETTE.map((color, i) => (
+                         <div 
+                            key={i} 
+                            className="w-4 h-4 rounded-full shadow-md border border-white/20 hover:scale-150 transition-transform cursor-pointer"
+                            style={{ backgroundColor: color }}
+                            title={`Filter by ${color}`}
+                            onClick={(e) => { e.stopPropagation(); /* Trigger color filter logic */ }}
+                         ></div>
+                     ))}
+                 </div>
+
+                 <div className="flex justify-between items-end gap-2">
+                    {/* Interactive Tags (Replaced Source URL) */}
+                    <div className="flex flex-wrap gap-1 max-w-[70%]">
+                        {pin.tags.slice(0, 3).map((tag, idx) => (
+                            <button
+                                key={idx}
+                                onClick={(e) => handleTagClick(e, tag)}
+                                className="px-2 py-1 bg-white/20 backdrop-blur-md rounded-lg text-[10px] font-bold text-white hover:bg-white hover:text-emerald-700 transition-all border border-white/10 flex items-center gap-1 hover:scale-105 shadow-sm"
+                            >
+                                <Hash size={10} /> {tag}
+                            </button>
+                        ))}
                     </div>
-                    source.com
-                </a>
-                <div className="flex gap-2">
-                    <button className="bg-white/90 backdrop-blur-xl p-2.5 rounded-full hover:bg-white text-black shadow-lg transition-all hover:scale-110">
-                    <Share2 size={18} />
-                    </button>
-                    <button className="bg-white/90 backdrop-blur-xl p-2.5 rounded-full hover:bg-white text-black shadow-lg transition-all hover:scale-110">
-                    <MoreHorizontal size={18} />
-                    </button>
-                </div>
-             </div>
+
+                    <div className="flex gap-2">
+                        <button className="bg-white/90 backdrop-blur-xl p-2.5 rounded-full hover:bg-white text-black shadow-lg transition-all hover:scale-110">
+                        <Share2 size={18} />
+                        </button>
+                        <button className="bg-white/90 backdrop-blur-xl p-2.5 rounded-full hover:bg-white text-black shadow-lg transition-all hover:scale-110">
+                        <MoreHorizontal size={18} />
+                        </button>
+                    </div>
+                 </div>
+              </div>
           </div>
       </div>
     </div>
