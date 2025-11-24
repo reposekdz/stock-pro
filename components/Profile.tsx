@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { Plus, Settings, Share2 } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Plus, Settings, Share2, Camera, MapPin, Link as LinkIcon, Edit3, X, Globe, Instagram, Twitter } from 'lucide-react';
 import { User, Board, Pin } from '../types';
 
 interface ProfileProps {
@@ -15,17 +15,102 @@ interface ProfileProps {
 
 export const Profile: React.FC<ProfileProps> = ({ user, boards, savedPins, onCreateBoard, onOpenBoard, onShowFollowers, onShowFollowing }) => {
     const [activeTab, setActiveTab] = useState<'created' | 'saved'>('saved');
+    const [isEditing, setIsEditing] = useState(false);
+    const [coverImage, setCoverImage] = useState(user.coverUrl || `https://picsum.photos/seed/${user.username}cover/1600/400`);
+    const [avatarImage, setAvatarImage] = useState(user.avatarUrl);
+    
+    // Edit Form State
+    const [editBio, setEditBio] = useState(user.bio || "");
+    const [editLocation, setEditLocation] = useState(user.location || "");
+    const [editLinks, setEditLinks] = useState(user.links || [{ label: 'Portfolio', url: 'https://portfolio.com' }]);
+
+    const coverInputRef = useRef<HTMLInputElement>(null);
+    const avatarInputRef = useRef<HTMLInputElement>(null);
+
+    const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const url = URL.createObjectURL(e.target.files[0]);
+            setCoverImage(url);
+        }
+    };
+
+    const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const url = URL.createObjectURL(e.target.files[0]);
+            setAvatarImage(url);
+        }
+    };
+
+    const handleSaveProfile = () => {
+        // In a real app, this would API call
+        setIsEditing(false);
+    };
+
+    const addLink = () => {
+        setEditLinks([...editLinks, { label: '', url: '' }]);
+    };
+
+    const updateLink = (index: number, field: 'label' | 'url', value: string) => {
+        const newLinks = [...editLinks];
+        newLinks[index][field] = value;
+        setEditLinks(newLinks);
+    };
 
     return (
-        <div className="flex flex-col items-center pt-8 pb-12 w-full">
-            {/* Profile Header */}
-            <div className="flex flex-col items-center mb-12 animate-in slide-in-from-bottom-5 duration-500">
-                <div className="p-1 rounded-full bg-gradient-to-tr from-emerald-400 to-teal-500 mb-4">
-                    <img src={user.avatarUrl} alt={user.username} className="w-32 h-32 rounded-full object-cover border-4 border-white" />
+        <div className="flex flex-col items-center w-full pb-12 animate-in fade-in duration-500">
+            
+            {/* Cover Image Area */}
+            <div className="group relative w-full h-64 md:h-80 overflow-hidden bg-gray-100">
+                <img src={coverImage} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Cover" />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center">
+                    <button 
+                        onClick={() => coverInputRef.current?.click()}
+                        className="bg-white/20 backdrop-blur-md border border-white/50 text-white px-6 py-2 rounded-full font-bold opacity-0 group-hover:opacity-100 transition-all transform translate-y-4 group-hover:translate-y-0 flex items-center gap-2 hover:bg-white hover:text-black"
+                    >
+                        <Camera size={18} /> Change Cover
+                    </button>
                 </div>
-                <h1 className="text-4xl font-extrabold mb-1 text-gray-900 tracking-tight">{user.username}</h1>
-                <p className="text-gray-500 mb-3 font-medium">@stocpro_user</p>
+                <input type="file" ref={coverInputRef} className="hidden" accept="image/*" onChange={handleCoverChange} />
+            </div>
+
+            {/* Profile Info Card */}
+            <div className="flex flex-col items-center -mt-20 relative z-10 px-4 w-full max-w-5xl">
                 
+                {/* Avatar */}
+                <div className="relative group cursor-pointer mb-4">
+                    <div className="p-1.5 rounded-full bg-white shadow-xl">
+                        <img src={avatarImage} alt={user.username} className="w-32 h-32 md:w-40 md:h-40 rounded-full object-cover border-4 border-gray-50" />
+                    </div>
+                    <button 
+                        onClick={() => avatarInputRef.current?.click()}
+                        className="absolute bottom-2 right-2 p-2.5 bg-gray-900 text-white rounded-full border-4 border-white shadow-lg opacity-0 group-hover:opacity-100 transition-all scale-90 group-hover:scale-100"
+                    >
+                        <Camera size={16} />
+                    </button>
+                    <input type="file" ref={avatarInputRef} className="hidden" accept="image/*" onChange={handleAvatarChange} />
+                </div>
+                
+                <h1 className="text-4xl font-extrabold mb-1 text-gray-900 tracking-tight">{user.username}</h1>
+                <p className="text-gray-500 mb-4 font-medium">@stocpro_user</p>
+                
+                {/* Bio & Details */}
+                <div className="text-center max-w-lg mb-6">
+                     <p className="text-gray-800 leading-relaxed mb-4">{editBio}</p>
+                     
+                     <div className="flex flex-wrap justify-center gap-4 text-sm font-bold text-gray-500">
+                        {editLocation && (
+                            <span className="flex items-center gap-1.5">
+                                <MapPin size={14} className="text-gray-400" /> {editLocation}
+                            </span>
+                        )}
+                        {editLinks.map((link, i) => (
+                            <a key={i} href={link.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-emerald-600 transition-colors">
+                                <LinkIcon size={14} className="text-gray-400" /> {link.label}
+                            </a>
+                        ))}
+                     </div>
+                </div>
+
                 <div className="flex gap-6 text-sm font-bold text-gray-900 mb-8">
                     <button 
                         onClick={onShowFollowers}
@@ -44,11 +129,96 @@ export const Profile: React.FC<ProfileProps> = ({ user, boards, savedPins, onCre
                     </button>
                 </div>
 
-                <div className="flex gap-3">
-                    <button className="px-8 py-3 bg-gray-100 rounded-full font-bold hover:bg-gray-200 transition">Share</button>
-                    <button className="px-8 py-3 bg-gray-100 rounded-full font-bold hover:bg-gray-200 transition">Edit Profile</button>
+                <div className="flex gap-3 mb-12">
+                    <button className="px-8 py-3 bg-gray-100 rounded-full font-bold hover:bg-gray-200 transition flex items-center gap-2">
+                        <Share2 size={18}/> Share
+                    </button>
+                    <button 
+                        onClick={() => setIsEditing(true)}
+                        className="px-8 py-3 bg-black text-white rounded-full font-bold hover:bg-gray-800 transition flex items-center gap-2 shadow-lg"
+                    >
+                        <Edit3 size={18}/> Edit Profile
+                    </button>
                 </div>
             </div>
+
+            {/* Edit Modal */}
+            {isEditing && (
+                <div className="fixed inset-0 z-[200] bg-black/50 backdrop-blur-sm flex items-center justify-center animate-in fade-in">
+                    <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
+                        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+                            <h2 className="text-xl font-black">Edit Profile</h2>
+                            <button onClick={() => setIsEditing(false)} className="p-2 hover:bg-gray-100 rounded-full"><X size={20}/></button>
+                        </div>
+                        
+                        <div className="p-6 overflow-y-auto scrollbar-thin space-y-6">
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-gray-500 uppercase">Bio</label>
+                                <textarea 
+                                    className="w-full p-4 bg-gray-50 rounded-xl border border-gray-200 focus:border-black focus:ring-0 outline-none resize-none h-24 font-medium"
+                                    placeholder="Tell your story..."
+                                    value={editBio}
+                                    onChange={(e) => setEditBio(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-gray-500 uppercase">Location</label>
+                                <div className="relative">
+                                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                                    <input 
+                                        type="text"
+                                        className="w-full pl-10 p-4 bg-gray-50 rounded-xl border border-gray-200 focus:border-black focus:ring-0 outline-none font-medium"
+                                        placeholder="City, Country"
+                                        value={editLocation}
+                                        onChange={(e) => setEditLocation(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-3">
+                                <div className="flex justify-between items-center">
+                                    <label className="text-xs font-bold text-gray-500 uppercase">Links</label>
+                                    <button onClick={addLink} className="text-xs font-bold text-emerald-600 hover:underline">+ Add Link</button>
+                                </div>
+                                {editLinks.map((link, i) => (
+                                    <div key={i} className="flex gap-2">
+                                        <input 
+                                            type="text" 
+                                            placeholder="Label (e.g. Website)" 
+                                            className="w-1/3 p-3 bg-gray-50 rounded-xl border border-gray-200 outline-none text-sm font-bold"
+                                            value={link.label}
+                                            onChange={(e) => updateLink(i, 'label', e.target.value)}
+                                        />
+                                        <input 
+                                            type="text" 
+                                            placeholder="URL (https://...)" 
+                                            className="flex-1 p-3 bg-gray-50 rounded-xl border border-gray-200 outline-none text-sm"
+                                            value={link.url}
+                                            onChange={(e) => updateLink(i, 'url', e.target.value)}
+                                        />
+                                        <button 
+                                            onClick={() => setEditLinks(editLinks.filter((_, idx) => idx !== i))}
+                                            className="p-3 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-xl"
+                                        >
+                                            <X size={16} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="p-6 border-t border-gray-100">
+                            <button 
+                                onClick={handleSaveProfile}
+                                className="w-full py-3.5 bg-black text-white font-bold rounded-xl hover:bg-gray-900 transition shadow-lg"
+                            >
+                                Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Tabs */}
             <div className="flex gap-8 mb-8 border-b border-gray-100 w-full justify-center">

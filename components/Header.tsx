@@ -1,8 +1,6 @@
 
-
-
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Bell, MessageCircle, User as UserIcon, X, Camera, ArrowLeft, ArrowRight, Eye, Sparkles, Settings, Heart, UserPlus, Plus } from 'lucide-react';
+import { Search, Bell, MessageCircle, User as UserIcon, X, Camera, ArrowLeft, ArrowRight, Eye, Sparkles, Settings, Heart, UserPlus, Plus, TrendingUp } from 'lucide-react';
 import { getSearchSuggestions } from '../services/geminiService';
 import { Notification } from '../types';
 
@@ -11,7 +9,8 @@ interface HeaderProps {
   onVisualSearch: (file: File) => void;
   onHomeClick: () => void;
   onProfileClick: () => void;
-  onMessagesClick: () => void; // Added
+  onMessagesClick: () => void;
+  onMonetizationClick: () => void; // Added
   currentQuery?: string;
   canGoBack: boolean;
   canGoForward: boolean;
@@ -49,6 +48,7 @@ export const Header: React.FC<HeaderProps> = ({
     onHomeClick, 
     onProfileClick, 
     onMessagesClick,
+    onMonetizationClick,
     currentQuery,
     canGoBack,
     canGoForward,
@@ -217,6 +217,15 @@ export const Header: React.FC<HeaderProps> = ({
             >
              <Eye size={22} />
           </button>
+          
+           {/* Monetization / Dashboard Button */}
+           <button 
+              className="p-3 hover:bg-gray-100 rounded-full hidden sm:block transition-transform hover:scale-110 active:scale-95 hover:text-black relative"
+              onClick={onMonetizationClick}
+              title="Business Hub"
+           >
+              <TrendingUp size={22} />
+           </button>
 
            <button 
               className="p-3 bg-black text-white rounded-full transition-all duration-300 hover:scale-110 hover:shadow-lg active:scale-95 flex items-center gap-2"

@@ -10,7 +10,8 @@ import { BoardDetail } from './components/BoardDetail';
 import { StoryViewer } from './components/StoryViewer';
 import { CreateModal } from './components/CreateModal';
 import { UserListModal } from './components/UserListModal';
-import { Messages } from './components/Messages'; // Added
+import { Messages } from './components/Messages';
+import { MonetizationDashboard } from './components/MonetizationDashboard'; // Added
 import { Pin, User, Board, ViewState, Filter, Story, Collaborator } from './types';
 import { generatePinDetails, getPersonalizedTopics } from './services/geminiService';
 import { Wand2, Plus, SlidersHorizontal, ArrowUp, ScanLine, Loader2, Archive, X, ArrowRight, Zap, Play, ChevronLeft, ChevronRight, Palette, Layout, Sparkles, RefreshCw, Layers, Settings as SettingsIcon, MessageSquare, Phone } from 'lucide-react';
@@ -30,7 +31,8 @@ const generateMockUser = (): User => ({
     followers: 8420,
     following: 345,
     bio: 'Curating the future of design. Digital Architect & Visual Storyteller.',
-    coverUrl: 'https://picsum.photos/seed/myCover/1600/400'
+    coverUrl: 'https://picsum.photos/seed/myCover/1600/400',
+    isCreator: true
 });
 
 const generateMockUserList = (count: number): User[] => {
@@ -103,7 +105,8 @@ const generateMockPins = (count: number, topicSeed?: string, tagsOverride?: stri
     const width = 600;
     const height = Math.floor(Math.random() * (900 - 500 + 1)) + 500;
     const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
+    const isExclusive = Math.random() > 0.9;
+
     return {
       id,
       title: topic,
@@ -113,6 +116,7 @@ const generateMockPins = (count: number, topicSeed?: string, tagsOverride?: stri
       height,
       tags: tagsOverride || [topic.split(' ')[0], 'inspiration', 'design'],
       likes: Math.floor(Math.random() * 2000),
+      isExclusive: isExclusive,
       author: {
         id: `user-${i}`,
         username: `creator_${Math.floor(Math.random() * 999)}`,
@@ -439,11 +443,15 @@ const App: React.FC = () => {
       }
 
       switch (viewState) {
+          case ViewState.MONETIZATION:
+              return <MonetizationDashboard onClose={goBack} />;
+
           case ViewState.MESSAGES:
               return (
                   <Messages 
                     currentUser={currentUser}
                     onClose={goBack}
+                    onViewProfile={handleUserClick} // New Prop
                   />
               );
 
@@ -671,6 +679,7 @@ const App: React.FC = () => {
         onHomeClick={() => { navigateTo(ViewState.HOME); setCurrentQuery(""); setVisualSearchImage(null); }}
         onProfileClick={() => navigateTo(ViewState.PROFILE)}
         onMessagesClick={() => navigateTo(ViewState.MESSAGES)}
+        onMonetizationClick={() => navigateTo(ViewState.MONETIZATION)}
         currentQuery={currentQuery}
         canGoBack={historyIndex > 0}
         canGoForward={historyIndex < historyStack.length - 1}

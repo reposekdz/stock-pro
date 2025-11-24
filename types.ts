@@ -1,19 +1,20 @@
 
-
-
 export interface User {
   id: string;
   username: string;
   avatarUrl: string;
   followers: number;
   following: number;
-  bio?: string; // Added bio
-  coverUrl?: string; // Added cover image
+  bio?: string;
+  coverUrl?: string;
+  isCreator?: boolean;
+  location?: string;
+  links?: { label: string; url: string }[];
 }
 
 export interface Collaborator extends User {
   role: 'owner' | 'editor' | 'viewer';
-  email?: string; // Added for invite logic
+  email?: string;
 }
 
 export interface Comment {
@@ -21,15 +22,24 @@ export interface Comment {
   user: User;
   text: string;
   timestamp: string;
-  likes: number;     // Added likes count
-  liked: boolean;    // Added liked state
+  likes: number;
+  liked: boolean;
 }
 
 export interface ImageEditSettings {
   brightness: number;
   contrast: number;
   saturation: number;
-  filter: string; // 'none' | 'vivid' | 'noir' | 'vintage' ...
+  filter: string;
+}
+
+export interface Product {
+    id: string;
+    name: string;
+    price: number;
+    currency: string;
+    imageUrl: string;
+    affiliateLink: string;
 }
 
 export interface Pin {
@@ -45,14 +55,16 @@ export interface Pin {
   comments?: Comment[];
   location?: string;
   scheduledFor?: string;
-  editSettings?: ImageEditSettings; // Store visual edits
+  editSettings?: ImageEditSettings;
+  taggedProducts?: Product[];
+  isExclusive?: boolean; // For subscribers
 }
 
 export interface Board {
   id: string;
   title: string;
   description?: string;
-  pins: string[]; // Pin IDs
+  pins: string[];
   isPrivate: boolean;
   collaborators: Collaborator[];
   createdAt: string;
@@ -70,6 +82,9 @@ export interface Story {
   imageUrl: string;
   timestamp: string;
   viewed: boolean;
+  videoUrl?: string;
+  duration?: number;
+  products?: Product[];
 }
 
 export interface Notification {
@@ -83,24 +98,57 @@ export interface Notification {
 }
 
 // --- Messaging Types ---
+export interface PollOption {
+    id: string;
+    text: string;
+    votes: number;
+    voters: string[]; // User IDs
+}
+
+export type MessageStatus = 'sending' | 'sent' | 'delivered' | 'read';
+
 export interface Message {
   id: string;
   senderId: string;
-  text: string;
+  text?: string;
   timestamp: string;
-  type: 'text' | 'image' | 'voice' | 'pin';
+  type: 'text' | 'image' | 'voice' | 'file' | 'sticker' | 'pin' | 'poll' | 'system';
   mediaUrl?: string;
-  read: boolean;
+  fileName?: string;
+  fileSize?: string;
+  duration?: string; // For voice notes (e.g. "0:14")
+  read: boolean; // Kept for backward compatibility
+  status?: MessageStatus;
+  edited?: boolean;
+  replyTo?: {
+      id: string;
+      username: string;
+      text: string;
+      type: string;
+  };
+  reactions?: { emoji: string; count: number; userReacted: boolean }[];
+  poll?: {
+      question: string;
+      options: PollOption[];
+      totalVotes: number;
+      userVotedOptionId?: string;
+  };
 }
 
 export interface Conversation {
   id: string;
-  user: User;
+  user: User; // For 1:1, this is the other user. For Groups, a dummy user or primary admin
+  isGroup?: boolean;
+  groupName?: string;
+  groupImage?: string;
+  participants?: User[];
+  admins?: string[];
   lastMessage: string;
   lastMessageTime: string;
   unreadCount: number;
   messages: Message[];
   isOnline: boolean;
+  pinnedMessageId?: string;
 }
 
 export enum ViewState {
@@ -111,5 +159,6 @@ export enum ViewState {
   USER_PROFILE = 'USER_PROFILE',
   VISUAL_SEARCH = 'VISUAL_SEARCH',
   SETTINGS = 'SETTINGS',
-  MESSAGES = 'MESSAGES' // Added
+  MESSAGES = 'MESSAGES',
+  MONETIZATION = 'MONETIZATION'
 }
