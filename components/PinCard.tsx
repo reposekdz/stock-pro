@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, MouseEvent } from 'react';
-import { Share2, MoreHorizontal, ChevronDown, Check, ScanSearch, Archive, Heart, Hash, Eye, TrendingUp, Wand2, Lock, Crown } from 'lucide-react';
+import { Share2, MoreHorizontal, ChevronDown, Check, ScanSearch, Archive, Heart, Hash, Eye, TrendingUp, Wand2, Lock, Crown, Megaphone } from 'lucide-react';
 import { Pin, Board, User } from '../types';
 
 interface PinCardProps {
@@ -10,7 +10,7 @@ interface PinCardProps {
   onMoreLikeThis: (pin: Pin) => void;
   onStash: (pin: Pin) => void;
   onTagClick: (tag: string) => void;
-  onUserClick?: (user: User) => void; // Added onUserClick prop
+  onUserClick?: (user: User) => void; 
   boards: Board[];
 }
 
@@ -159,6 +159,14 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onClick, onSave, onMoreLi
               <div className="absolute top-3 left-3 z-30 bg-purple-600 text-white px-2 py-1 rounded-lg shadow-lg flex items-center gap-1.5 backdrop-blur-md">
                   <Crown size={12} fill="currentColor" className="text-yellow-300"/>
                   <span className="text-[10px] font-black uppercase tracking-wider">Subscriber Only</span>
+              </div>
+          )}
+
+          {/* Promoted Badge */}
+          {pin.monetization?.isPromoted && (
+              <div className="absolute top-3 right-3 z-30 bg-white/90 text-gray-900 px-2 py-1 rounded-lg shadow-lg flex items-center gap-1.5 backdrop-blur-md">
+                  <Megaphone size={12} className="text-orange-500"/>
+                  <span className="text-[10px] font-black uppercase tracking-wider">Promoted</span>
               </div>
           )}
           

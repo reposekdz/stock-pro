@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Upload, Image as ImageIcon, Sparkles, Video, Check, Loader2, Wand2, Plus, Sliders, Sun, Contrast, Droplet, MapPin, Calendar, Tag, Mic, ChevronDown, Save, Type, Sticker, Music, AlignCenter, Layout, Move, RotateCw, Crop, Smartphone, Layers, GripHorizontal, Palette, Share2, MousePointer2, Scissors, FastForward, PlayCircle, PauseCircle, Film, ShoppingBag, DollarSign, Lock, Trash2, Type as TypeIcon, Circle, Square, Subtitles, Play } from 'lucide-react';
+import { X, Upload, Image as ImageIcon, Sparkles, Video, Check, Loader2, Wand2, Plus, Sliders, Sun, Contrast, Droplet, MapPin, Calendar, Tag, Mic, ChevronDown, Save, Type, Sticker, Music, AlignCenter, Layout, Move, RotateCw, Crop, Smartphone, Layers, GripHorizontal, Palette, Share2, MousePointer2, Scissors, FastForward, PlayCircle, PauseCircle, Film, ShoppingBag, DollarSign, Lock, Trash2, Type as TypeIcon, Circle, Square, Subtitles, Play, RotateCcw, Monitor, Megaphone, Ratio } from 'lucide-react';
 import { User, Pin, Story, Board, ImageEditSettings, Product } from '../types';
 
 interface CreateModalProps {
@@ -32,21 +32,24 @@ const FILTERS = [
     { id: 'cinematic', label: 'Cinematic', style: 'contrast(1.1) saturate(0.8) brightness(0.9) sepia(0.2)' },
     { id: 'warm', label: 'Warm', style: 'sepia(0.2) saturate(1.2)' },
     { id: 'cool', label: 'Cool', style: 'hue-rotate(180deg) sepia(0.1)' },
+    { id: 'dramatic', label: 'Dramatic', style: 'contrast(1.4) brightness(0.9)' },
 ];
 
-const STICKERS = ['🔥', '✨', '🌿', '💯', '❤️', '🎉', '👀', '🚀', '🎨', '👋'];
+const STICKERS = ['🔥', '✨', '🌿', '💯', '❤️', '🎉', '👀', '🚀', '🎨', '👋', '💎', '👑'];
 
-const STORY_TEMPLATES = [
-    { id: 'blank', label: 'Blank', icon: Layout },
-    { id: 'collage', label: 'Collage', icon: Layers },
-    { id: 'promo', label: 'Promo', icon: ShoppingBag },
-    { id: 'minimal', label: 'Minimal', icon: Crop },
+const ASPECT_RATIOS = [
+    { id: 'free', label: 'Free', value: 'auto' },
+    { id: '1:1', label: 'Square', value: '1 / 1' },
+    { id: '4:5', label: 'Portrait', value: '4 / 5' },
+    { id: '16:9', label: 'Wide', value: '16 / 9' },
+    { id: '9:16', label: 'Story', value: '9 / 16' },
 ];
 
 const MOCK_PRODUCTS: Product[] = [
     { id: 'p1', name: 'Ceramic Vase', price: 45, currency: '$', imageUrl: 'https://picsum.photos/seed/vase/100/100', affiliateLink: '#' },
     { id: 'p2', name: 'Linen Throw', price: 89, currency: '$', imageUrl: 'https://picsum.photos/seed/linen/100/100', affiliateLink: '#' },
     { id: 'p3', name: 'Table Lamp', price: 120, currency: '$', imageUrl: 'https://picsum.photos/seed/lamp/100/100', affiliateLink: '#' },
+    { id: 'p4', name: 'Velvet Chair', price: 299, currency: '$', imageUrl: 'https://picsum.photos/seed/chair/100/100', affiliateLink: '#' },
 ];
 
 export const CreateModal: React.FC<CreateModalProps> = ({ onClose, onCreatePin, onCreateStory, user, boards }) => {
@@ -62,20 +65,28 @@ export const CreateModal: React.FC<CreateModalProps> = ({ onClose, onCreatePin, 
     const [isGenerating, setIsGenerating] = useState(false);
 
     // Pro Studio State
-    const [activeTool, setActiveTool] = useState<'canvas' | 'filters' | 'adjust' | 'text' | 'stickers'>('canvas');
-    const [editSettings, setEditSettings] = useState({
+    const [activeTool, setActiveTool] = useState<'canvas' | 'filters' | 'adjust' | 'text' | 'stickers' | 'crop'>('canvas');
+    const [editSettings, setEditSettings] = useState<ImageEditSettings>({
         brightness: 100,
         contrast: 100,
         saturation: 100,
-        blur: 0,
-        sepia: 0,
-        vignette: 0,
-        rotation: 0,
         filter: 'none',
-        playbackSpeed: 1
+        rotation: 0,
+        scale: 1,
+        cropX: 0,
+        cropY: 0,
+        aspectRatio: 'auto'
     });
+    
+    // Additional view settings not saved to DB but used for editing state
+    const [blur, setBlur] = useState(0);
+    const [sepia, setSepia] = useState(0);
+    const [vignette, setVignette] = useState(0);
+
     const [canvasItems, setCanvasItems] = useState<CanvasItem[]>([]);
     const [draggingItemId, setDraggingItemId] = useState<string | null>(null);
+    const [isPanningImage, setIsPanningImage] = useState(false);
+    const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
     
     // Video State
     const [isVideoPlaying, setIsVideoPlaying] = useState(false);
@@ -87,6 +98,7 @@ export const CreateModal: React.FC<CreateModalProps> = ({ onClose, onCreatePin, 
     const [taggedProducts, setTaggedProducts] = useState<Product[]>([]);
     const [isExclusive, setIsExclusive] = useState(false);
     const [adsEnabled, setAdsEnabled] = useState(true);
+    const [isPromoted, setIsPromoted] = useState(false);
     const [showProductPicker, setShowProductPicker] = useState(false);
 
     // Meta State
@@ -150,29 +162,59 @@ export const CreateModal: React.FC<CreateModalProps> = ({ onClose, onCreatePin, 
         setCanvasItems(canvasItems.filter(i => i.id !== id));
     };
 
-    // Drag Logic
-    const handleMouseDown = (e: React.MouseEvent, id: string) => {
-        e.stopPropagation();
-        setDraggingItemId(id);
+    // Drag Logic for Canvas Items & Image Panning
+    const handleMouseDown = (e: React.MouseEvent, id?: string) => {
+        if (id) {
+            // Dragging a sticker/text
+            e.stopPropagation();
+            setDraggingItemId(id);
+        } else if (activeTool === 'crop') {
+            // Panning the image
+            setIsPanningImage(true);
+            setLastPanPoint({ x: e.clientX, y: e.clientY });
+        }
     };
 
     const handleMouseMove = (e: React.MouseEvent) => {
-        if (!draggingItemId || !canvasRef.current) return;
-        
+        if (!canvasRef.current) return;
         const rect = canvasRef.current.getBoundingClientRect();
-        const x = ((e.clientX - rect.left) / rect.width) * 100;
-        const y = ((e.clientY - rect.top) / rect.height) * 100;
 
-        setCanvasItems(items => items.map(item => {
-            if (item.id === draggingItemId) {
-                return { ...item, x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) };
-            }
-            return item;
-        }));
+        // Handle Image Panning (Crop Mode)
+        if (isPanningImage && activeTool === 'crop') {
+            const dx = e.clientX - lastPanPoint.x;
+            const dy = e.clientY - lastPanPoint.y;
+            
+            // Convert pixels to percentage relative to container
+            const percentX = (dx / rect.width) * 100;
+            const percentY = (dy / rect.height) * 100;
+
+            setEditSettings(prev => ({
+                ...prev,
+                cropX: prev.cropX + percentX,
+                cropY: prev.cropY + percentY
+            }));
+            
+            setLastPanPoint({ x: e.clientX, y: e.clientY });
+            return;
+        }
+
+        // Handle Canvas Item Dragging
+        if (draggingItemId) {
+            const x = ((e.clientX - rect.left) / rect.width) * 100;
+            const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+            setCanvasItems(items => items.map(item => {
+                if (item.id === draggingItemId) {
+                    return { ...item, x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) };
+                }
+                return item;
+            }));
+        }
     };
 
     const handleMouseUp = () => {
         setDraggingItemId(null);
+        setIsPanningImage(false);
     };
 
     const toggleProductTag = (product: Product) => {
@@ -181,6 +223,16 @@ export const CreateModal: React.FC<CreateModalProps> = ({ onClose, onCreatePin, 
         } else {
             setTaggedProducts(prev => [...prev, product]);
         }
+    };
+
+    const handleMagicEnhance = () => {
+        setEditSettings(prev => ({
+            ...prev,
+            brightness: 110,
+            contrast: 115,
+            saturation: 120,
+            filter: 'none'
+        }));
     };
 
     const handlePublish = () => {
@@ -215,16 +267,14 @@ export const CreateModal: React.FC<CreateModalProps> = ({ onClose, onCreatePin, 
                     author: user,
                     location: location,
                     editSettings: {
-                        brightness: editSettings.brightness,
-                        contrast: editSettings.contrast,
-                        saturation: editSettings.saturation,
-                        filter: editSettings.filter
+                        ...editSettings
                     },
                     taggedProducts: taggedProducts,
                     isExclusive: isExclusive,
                     monetization: {
                         adsEnabled: adsEnabled,
-                        isSubscriberOnly: isExclusive
+                        isSubscriberOnly: isExclusive,
+                        isPromoted: isPromoted
                     }
                 };
                 onCreatePin(newPin, selectedBoardId);
@@ -237,9 +287,10 @@ export const CreateModal: React.FC<CreateModalProps> = ({ onClose, onCreatePin, 
     const getPreviewStyle = () => {
         const filterStyle = FILTERS.find(f => f.id === editSettings.filter)?.style || '';
         return {
-            filter: `${filterStyle} brightness(${editSettings.brightness}%) contrast(${editSettings.contrast}%) saturate(${editSettings.saturation}%) blur(${editSettings.blur}px) sepia(${editSettings.sepia}%)`,
-            transform: `rotate(${editSettings.rotation}deg)`,
-            boxShadow: editSettings.vignette > 0 ? `inset 0 0 ${editSettings.vignette}px black` : 'none'
+            filter: `${filterStyle} brightness(${editSettings.brightness}%) contrast(${editSettings.contrast}%) saturate(${editSettings.saturation}%) blur(${blur}px) sepia(${sepia}%)`,
+            transform: `translate(${editSettings.cropX}%, ${editSettings.cropY}%) rotate(${editSettings.rotation}deg) scale(${editSettings.scale})`,
+            boxShadow: vignette > 0 ? `inset 0 0 ${vignette}px black` : 'none',
+            transformOrigin: 'center center'
         };
     };
 
@@ -254,6 +305,68 @@ export const CreateModal: React.FC<CreateModalProps> = ({ onClose, onCreatePin, 
     // Render Tools Panel Content
     const renderToolsPanel = () => {
         switch (activeTool) {
+            case 'crop':
+                return (
+                    <div className="p-4 space-y-6">
+                        <h3 className="text-xs font-bold text-gray-500 uppercase">Crop & Rotate</h3>
+                        
+                        <div className="space-y-3">
+                            <label className="text-xs font-bold text-gray-900">Aspect Ratio</label>
+                            <div className="grid grid-cols-3 gap-2">
+                                {ASPECT_RATIOS.map(ar => (
+                                    <button
+                                        key={ar.id}
+                                        onClick={() => setEditSettings({...editSettings, aspectRatio: ar.value})}
+                                        className={`py-2 px-1 rounded-lg text-xs font-bold border transition ${editSettings.aspectRatio === ar.value ? 'bg-black text-white border-black' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'}`}
+                                    >
+                                        {ar.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="space-y-3">
+                             <label className="text-xs font-bold text-gray-900">Geometry</label>
+                             <div className="flex gap-2">
+                                 <button 
+                                    onClick={() => setEditSettings(p => ({...p, rotation: p.rotation - 90}))}
+                                    className="flex-1 py-3 bg-gray-100 rounded-xl hover:bg-gray-200 flex items-center justify-center"
+                                    title="Rotate Left"
+                                 >
+                                     <RotateCcw size={18}/>
+                                 </button>
+                                 <button 
+                                    onClick={() => setEditSettings(p => ({...p, rotation: p.rotation + 90}))}
+                                    className="flex-1 py-3 bg-gray-100 rounded-xl hover:bg-gray-200 flex items-center justify-center"
+                                    title="Rotate Right"
+                                 >
+                                     <RotateCw size={18}/>
+                                 </button>
+                             </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <div className="flex justify-between text-xs font-bold text-gray-600">
+                                <span className="flex items-center gap-1">Scale / Zoom</span>
+                                <span>{Math.round(editSettings.scale * 100)}%</span>
+                            </div>
+                            <input 
+                                type="range" 
+                                min="1" 
+                                max="3" 
+                                step="0.1"
+                                value={editSettings.scale} 
+                                onChange={(e) => setEditSettings({...editSettings, scale: parseFloat(e.target.value)})}
+                                className="w-full accent-emerald-500 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                            />
+                        </div>
+                        
+                        <div className="p-3 bg-blue-50 text-blue-700 text-xs rounded-lg font-medium flex items-start gap-2">
+                            <Move size={14} className="mt-0.5 flex-shrink-0"/>
+                            Drag the image on the canvas to pan and adjust crop position.
+                        </div>
+                    </div>
+                );
             case 'filters':
                 return (
                     <div className="p-4 space-y-4">
@@ -277,12 +390,20 @@ export const CreateModal: React.FC<CreateModalProps> = ({ onClose, onCreatePin, 
             case 'adjust':
                 return (
                     <div className="p-4 space-y-6">
-                        <h3 className="text-xs font-bold text-gray-500 uppercase">Adjustments</h3>
+                        <div className="flex justify-between items-center">
+                            <h3 className="text-xs font-bold text-gray-500 uppercase">Adjustments</h3>
+                            <button 
+                                onClick={handleMagicEnhance}
+                                className="text-xs font-bold text-white bg-gradient-to-r from-purple-500 to-indigo-500 px-3 py-1 rounded-full flex items-center gap-1 hover:shadow-md transition"
+                            >
+                                <Wand2 size={10} /> Magic Fix
+                            </button>
+                        </div>
+                        
                         {[
                             { label: 'Brightness', key: 'brightness', min: 50, max: 150, icon: Sun },
                             { label: 'Contrast', key: 'contrast', min: 50, max: 150, icon: Contrast },
                             { label: 'Saturation', key: 'saturation', min: 0, max: 200, icon: Droplet },
-                            { label: 'Blur', key: 'blur', min: 0, max: 10, icon: Sparkles },
                         ].map((adj: any) => (
                             <div key={adj.key} className="space-y-2">
                                 <div className="flex justify-between text-xs font-bold text-gray-600">
@@ -299,6 +420,36 @@ export const CreateModal: React.FC<CreateModalProps> = ({ onClose, onCreatePin, 
                                 />
                             </div>
                         ))}
+
+                         <div className="space-y-2">
+                            <div className="flex justify-between text-xs font-bold text-gray-600">
+                                <span className="flex items-center gap-1"><Sparkles size={12}/> Blur</span>
+                                <span>{blur}px</span>
+                            </div>
+                            <input 
+                                type="range" 
+                                min="0" 
+                                max="10" 
+                                value={blur} 
+                                onChange={(e) => setBlur(parseFloat(e.target.value))}
+                                className="w-full accent-emerald-500 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                            />
+                        </div>
+
+                         <div className="space-y-2">
+                            <div className="flex justify-between text-xs font-bold text-gray-600">
+                                <span className="flex items-center gap-1"><Circle size={12}/> Vignette</span>
+                                <span>{vignette}</span>
+                            </div>
+                            <input 
+                                type="range" 
+                                min="0" 
+                                max="100" 
+                                value={vignette} 
+                                onChange={(e) => setVignette(parseFloat(e.target.value))}
+                                className="w-full accent-emerald-500 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                            />
+                        </div>
                     </div>
                 );
             case 'text':
@@ -372,6 +523,7 @@ export const CreateModal: React.FC<CreateModalProps> = ({ onClose, onCreatePin, 
                     <div className="flex-1 flex flex-col gap-2 w-full px-2">
                         {[
                             { id: 'canvas', icon: MousePointer2, label: 'Move' },
+                            { id: 'crop', icon: Crop, label: 'Crop' },
                             { id: 'filters', icon: Palette, label: 'Filters' },
                             { id: 'adjust', icon: Sliders, label: 'Adjust' },
                             { id: 'text', icon: TypeIcon, label: 'Text' },
@@ -406,16 +558,24 @@ export const CreateModal: React.FC<CreateModalProps> = ({ onClose, onCreatePin, 
                     {previewUrl ? (
                         <div 
                             ref={canvasRef}
-                            className="relative shadow-2xl transition-all duration-300 group/canvas max-w-[90%] max-h-[90vh] select-none"
+                            className="relative shadow-2xl transition-all duration-300 group/canvas overflow-hidden select-none bg-black"
+                            style={{ 
+                                aspectRatio: editSettings.aspectRatio !== 'auto' ? editSettings.aspectRatio : 'auto',
+                                width: editSettings.aspectRatio !== 'auto' ? 'auto' : '100%',
+                                height: editSettings.aspectRatio !== 'auto' ? '80%' : 'auto',
+                                maxHeight: '90vh',
+                                maxWidth: '90%',
+                            }}
                             onMouseMove={handleMouseMove}
                             onMouseUp={handleMouseUp}
                             onMouseLeave={handleMouseUp}
                         >
+                            {/* The Image Itself */}
                             {mode === 'video' ? (
                                 <video 
                                     ref={videoRef}
                                     src={previewUrl}
-                                    className="max-h-[85vh] rounded-lg object-contain"
+                                    className="w-full h-full object-cover pointer-events-none"
                                     style={getPreviewStyle()}
                                     loop
                                     onClick={toggleVideoPlay}
@@ -423,16 +583,30 @@ export const CreateModal: React.FC<CreateModalProps> = ({ onClose, onCreatePin, 
                             ) : (
                                 <img 
                                     src={previewUrl} 
-                                    className="max-h-[85vh] object-contain rounded-lg" 
+                                    className="w-full h-full object-cover pointer-events-none" 
                                     style={getPreviewStyle()}
+                                    draggable={false}
                                 />
                             )}
                             
+                            {/* Invisible interaction layer for cropping */}
+                            {activeTool === 'crop' && (
+                                <div 
+                                    className="absolute inset-0 cursor-move z-20 border-2 border-white/50"
+                                    onMouseDown={(e) => handleMouseDown(e)}
+                                >
+                                    <div className="absolute top-1/3 left-0 right-0 h-px bg-white/30 pointer-events-none"></div>
+                                    <div className="absolute top-2/3 left-0 right-0 h-px bg-white/30 pointer-events-none"></div>
+                                    <div className="absolute left-1/3 top-0 bottom-0 w-px bg-white/30 pointer-events-none"></div>
+                                    <div className="absolute left-2/3 top-0 bottom-0 w-px bg-white/30 pointer-events-none"></div>
+                                </div>
+                            )}
+
                             {/* Overlays */}
                             {canvasItems.map(item => (
                                 <div
                                     key={item.id}
-                                    className="absolute cursor-move group/item"
+                                    className="absolute cursor-move group/item z-30"
                                     style={{
                                         left: `${item.x}%`,
                                         top: `${item.y}%`,
@@ -462,7 +636,7 @@ export const CreateModal: React.FC<CreateModalProps> = ({ onClose, onCreatePin, 
 
                             {/* Product Tags Overlay */}
                             {taggedProducts.map((p, i) => (
-                                <div key={p.id} className="absolute bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-2 shadow-lg animate-in zoom-in" style={{ top: `${20 + i*15}%`, left: '20%' }}>
+                                <div key={p.id} className="absolute bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-2 shadow-lg animate-in zoom-in z-30" style={{ top: `${20 + i*15}%`, left: '20%' }}>
                                     <ShoppingBag size={12} className="text-emerald-600"/>
                                     <span className="text-xs font-bold text-gray-900">{p.name}</span>
                                     <span className="text-xs font-bold text-emerald-600">${p.price}</span>
@@ -473,13 +647,13 @@ export const CreateModal: React.FC<CreateModalProps> = ({ onClose, onCreatePin, 
                                 <>
                                     <button 
                                         onClick={toggleVideoPlay}
-                                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-4 bg-white/20 backdrop-blur-md rounded-full text-white opacity-0 group-hover/canvas:opacity-100 transition hover:scale-110"
+                                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-4 bg-white/20 backdrop-blur-md rounded-full text-white opacity-0 group-hover/canvas:opacity-100 transition hover:scale-110 z-30"
                                     >
                                         {isVideoPlaying ? <PauseCircle size={48} /> : <PlayCircle size={48} />}
                                     </button>
 
                                     {/* Video Tools Overlay */}
-                                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-3 opacity-0 group-hover/canvas:opacity-100 transition">
+                                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-3 opacity-0 group-hover/canvas:opacity-100 transition z-30">
                                         <button onClick={handleGenerateCaptions} className="bg-black/60 backdrop-blur-md text-white px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 hover:bg-black">
                                             {generatingCaptions ? <Loader2 className="animate-spin" size={14}/> : <Subtitles size={14}/>} 
                                             {generatingCaptions ? 'Generating...' : 'AI Captions'}
@@ -552,10 +726,28 @@ export const CreateModal: React.FC<CreateModalProps> = ({ onClose, onCreatePin, 
                         {/* Monetization Section */}
                         <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
                             <h3 className="font-black text-gray-900 flex items-center gap-2 mb-4 text-sm">
-                                <DollarSign size={16} className="text-emerald-600"/> Monetization
+                                <DollarSign size={16} className="text-emerald-600"/> Monetization & Promo
                             </h3>
                             
                             <div className="space-y-4">
+                                {/* Promote Pin Option */}
+                                <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-gray-200">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-1.5 bg-orange-100 text-orange-600 rounded-lg">
+                                            <Megaphone size={14} />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-bold text-gray-900">Promote Pin</p>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={() => setIsPromoted(!isPromoted)}
+                                        className={`w-8 h-5 rounded-full transition-colors relative ${isPromoted ? 'bg-orange-600' : 'bg-gray-200'}`}
+                                    >
+                                        <div className={`absolute top-1 w-3 h-3 bg-white rounded-full shadow-sm transition-transform ${isPromoted ? 'left-4' : 'left-1'}`}></div>
+                                    </button>
+                                </div>
+
                                 {mode === 'video' && (
                                     <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-gray-200">
                                         <div className="flex items-center gap-3">
@@ -621,24 +813,6 @@ export const CreateModal: React.FC<CreateModalProps> = ({ onClose, onCreatePin, 
                                 </div>
                             </div>
                         </div>
-
-                        {/* Story Templates */}
-                        {mode === 'story' && (
-                            <div>
-                                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Templates</h3>
-                                <div className="grid grid-cols-4 gap-2">
-                                    {STORY_TEMPLATES.map(t => (
-                                        <button 
-                                            key={t.id}
-                                            className={`flex flex-col items-center gap-2 p-2 rounded-xl border transition border-gray-100 hover:border-gray-300 bg-white`}
-                                        >
-                                            <t.icon size={16} className='text-gray-400'/>
-                                            <span className="text-[9px] font-bold">{t.label}</span>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
 
                         <div className="space-y-4">
                             <textarea 

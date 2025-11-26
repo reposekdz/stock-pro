@@ -36,6 +36,11 @@ export interface ImageEditSettings {
   contrast: number;
   saturation: number;
   filter: string;
+  rotation: number;
+  scale: number;
+  cropX: number;
+  cropY: number;
+  aspectRatio: string;
 }
 
 export interface Product {
@@ -51,6 +56,7 @@ export interface MonetizationSettings {
     adsEnabled: boolean;
     isSubscriberOnly: boolean;
     estimatedEarnings?: number;
+    isPromoted?: boolean; // New for Sponsors
 }
 
 export interface Pin {
@@ -66,7 +72,7 @@ export interface Pin {
   comments?: Comment[];
   location?: string;
   scheduledFor?: string;
-  editSettings?: ImageEditSettings;
+  editSettings?: Partial<ImageEditSettings>;
   taggedProducts?: Product[];
   isExclusive?: boolean; // For subscribers
   

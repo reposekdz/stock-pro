@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useRef } from 'react';
-import { X, MoreHorizontal, Share2, BadgeCheck, Heart, Smile, ChevronDown, Download, Maximize2, Crop, Sparkles, ShoppingBag, Search, Lock, Crown, Play, Pause, Volume2, VolumeX } from 'lucide-react';
+import { X, MoreHorizontal, Share2, BadgeCheck, Heart, Smile, ChevronDown, Download, Maximize2, Crop, Sparkles, ShoppingBag, Search, Lock, Crown, Play, Pause, Volume2, VolumeX, Megaphone } from 'lucide-react';
 import { Pin, Comment, Board, User, Product } from '../types';
 import { generateRelatedComments } from '../services/geminiService';
 import { PinCard } from './PinCard';
@@ -162,6 +162,26 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
       }
   }
 
+  // Calculate style based on editSettings if available
+  const getImageStyle = () => {
+      if (!pin.editSettings) return {
+           transform: isZooming && !isCropMode ? 'scale(1.5)' : 'scale(1)',
+           transformOrigin: `${zoomPosition.x}% ${zoomPosition.y}%`
+      };
+
+      // If we have edit settings, we need to respect them + the zoom
+      const { brightness, contrast, saturation, rotation, scale, cropX, cropY, filter } = pin.editSettings as any;
+      const filterStyle = filter && filter !== 'none' ? `contrast(1.2) saturate(1.3)` : ''; // Simplification for demo
+      
+      // Note: Full CSS filter matching from CreateModal would ideally be shared in a util
+      
+      return {
+          filter: `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%) ${filterStyle}`,
+          transform: `translate(${cropX}%, ${cropY}%) rotate(${rotation}deg) scale(${scale * (isZooming ? 1.5 : 1)})`,
+          transformOrigin: isZooming ? `${zoomPosition.x}% ${zoomPosition.y}%` : 'center center'
+      };
+  }
+
   return (
     <div className="fixed inset-0 z-[100] bg-white flex flex-col md:flex-row animate-in fade-in duration-200">
         
@@ -185,7 +205,7 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
                 style={{ backgroundImage: `url(${pin.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
             ></div>
             
-            <div className="relative z-10 w-full h-full flex items-center justify-center">
+            <div className="relative z-10 w-full h-full flex items-center justify-center overflow-hidden">
                 {pin.type === 'video' ? (
                     <div className="relative w-full h-full flex items-center justify-center">
                         <video 
@@ -229,11 +249,8 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
                     <img 
                         src={pin.imageUrl} 
                         alt={pin.title} 
-                        className={`max-w-full max-h-[90vh] object-contain transition-all duration-200 ${isCropMode ? 'scale-90 opacity-50' : ''}`}
-                        style={{
-                            transform: isZooming && !isCropMode ? 'scale(1.5)' : 'scale(1)',
-                            transformOrigin: `${zoomPosition.x}% ${zoomPosition.y}%`
-                        }}
+                        className={`max-w-full max-h-[90vh] object-contain transition-transform duration-100 ease-linear ${isCropMode ? 'scale-90 opacity-50' : ''}`}
+                        style={getImageStyle()}
                     />
                 )}
 
@@ -341,6 +358,18 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
                         <div>
                             <p className="font-bold text-sm">Subscriber Exclusive</p>
                             <p className="text-xs">Only available to super fans</p>
+                        </div>
+                    </div>
+                )}
+                
+                {pin.monetization?.isPromoted && (
+                    <div className="mb-4 bg-orange-50 text-orange-700 border border-orange-100 rounded-xl p-3 flex items-center gap-3">
+                        <div className="p-2 bg-orange-100 rounded-lg">
+                            <Megaphone size={20} />
+                        </div>
+                        <div>
+                            <p className="font-bold text-sm">Promoted</p>
+                            <p className="text-xs">This pin is sponsored content</p>
                         </div>
                     </div>
                 )}
