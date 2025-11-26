@@ -15,35 +15,15 @@ import { Messages } from './components/Messages';
 import { MonetizationDashboard } from './components/MonetizationDashboard'; 
 import { AuthModal } from './components/AuthModal';
 import { Onboarding } from './components/Onboarding';
-import { Pin, User, Board, ViewState, Filter, Story, Collaborator, Product, PinSlide } from './types';
-import { generatePinDetails, getPersonalizedTopics } from './services/geminiService';
-import { Wand2, Plus, SlidersHorizontal, ArrowUp, ScanLine, Loader2, Archive, X, ArrowRight, Zap, Play, ChevronLeft, ChevronRight, Palette, Layout, Sparkles, RefreshCw, Layers, Settings as SettingsIcon, MessageSquare, Phone, Grid, Video, Image as ImageIcon, Circle } from 'lucide-react';
+import { Pin, User, Board, ViewState, Story, PinSlide, Product } from './types';
+import { generatePinDetails } from './services/geminiService';
+import { Loader2, AlertTriangle, Cookie } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
-const DEFAULT_TOPICS = [
-  "Eco Brutalism", "Neon Cyberpunk", "Sustainable Fashion", "Parametric Architecture", 
-  "Abstract 3D Art", "Forest Cabins", "Ceramic Design", "Swiss Typography",
-  "Streetwear 2025", "Cozy Lofts", "Futuristic UI/UX", "Matcha Aesthetic", "Plant Based",
-  "Solar Punk", "DIY Tech", "Tattoo Art", "Glassmorphism", "Retro Anime", "Vaporwave", "Minimalist Setup"
-];
-
-const COLORS = [
-    { name: 'Red', hex: '#ef4444' },
-    { name: 'Orange', hex: '#f97316' },
-    { name: 'Yellow', hex: '#eab308' },
-    { name: 'Green', hex: '#22c55e' },
-    { name: 'Blue', hex: '#3b82f6' },
-    { name: 'Purple', hex: '#a855f7' },
-    { name: 'Pink', hex: '#ec4899' },
-    { name: 'Black', hex: '#000000' },
-    { name: 'White', hex: '#ffffff' },
-];
+const DEFAULT_TOPICS = ["Eco Brutalism", "Neon Cyberpunk", "Sustainable Fashion", "Abstract 3D Art", "Forest Cabins"];
 
 const MOCK_PRODUCTS_LIST: Product[] = [
-    { id: 'p1', name: 'Ceramic Vase', price: 45, currency: '$', imageUrl: 'https://picsum.photos/seed/vase/100/100', affiliateLink: '#' },
-    { id: 'p2', name: 'Linen Throw', price: 89, currency: '$', imageUrl: 'https://picsum.photos/seed/linen/100/100', affiliateLink: '#' },
-    { id: 'p3', name: 'Table Lamp', price: 120, currency: '$', imageUrl: 'https://picsum.photos/seed/lamp/100/100', affiliateLink: '#' },
-    { id: 'p4', name: 'Minimal Chair', price: 299, currency: '$', imageUrl: 'https://picsum.photos/seed/chair/100/100', affiliateLink: '#' },
+    { id: 'p1', name: 'Ceramic Vase', price: 45, currency: '$', imageUrl: 'https://picsum.photos/seed/vase/100/100', affiliateLink: '#' }
 ];
 
 const generateMockUser = (): User => ({
@@ -52,26 +32,10 @@ const generateMockUser = (): User => ({
     avatarUrl: 'https://picsum.photos/seed/userPro/100/100',
     followers: 8420,
     following: 345,
-    bio: 'Curating the future of design. Digital Architect & Visual Storyteller.',
+    bio: 'Curating the future of design.',
     coverUrl: 'https://picsum.photos/seed/myCover/1600/400',
-    isCreator: true,
-    monetizationEligibility: {
-        watchHours: 3240,
-        requiredWatchHours: 4000,
-        eligible: false
-    }
+    isCreator: true
 });
-
-const generateMockUserList = (count: number): User[] => {
-    return Array.from({ length: count }).map((_, i) => ({
-        id: `list-user-${i}-${Date.now()}`,
-        username: `User_${Math.floor(Math.random() * 10000)}`,
-        avatarUrl: `https://picsum.photos/seed/u${i + Math.random()}/100/100`,
-        followers: Math.floor(Math.random() * 5000),
-        following: Math.floor(Math.random() * 500),
-        bio: ['Designer', 'Artist', 'Photographer', 'Curator', 'Traveler'][Math.floor(Math.random() * 5)]
-    }));
-};
 
 const generateMockBoards = (userId: string): Board[] => [
     {
@@ -81,141 +45,40 @@ const generateMockBoards = (userId: string): Board[] => [
         isPrivate: true,
         collaborators: [{...generateMockUser(), role: 'owner'}],
         createdAt: new Date().toISOString()
-    },
-    {
-        id: 'b2',
-        title: 'Green Living',
-        pins: [],
-        isPrivate: false,
-        collaborators: [
-            {...generateMockUser(), role: 'owner'},
-            { 
-                id: 'c1', 
-                username: 'PlantMom', 
-                avatarUrl: 'https://picsum.photos/seed/plantmom/100/100', 
-                followers: 120, 
-                following: 40, 
-                role: 'editor' 
-            },
-            { 
-                id: 'c2', 
-                username: 'EcoArch', 
-                avatarUrl: 'https://picsum.photos/seed/ecoarch/100/100', 
-                followers: 500, 
-                following: 200, 
-                role: 'viewer' 
-            }
-        ],
-        createdAt: new Date().toISOString()
-    },
+    }
 ];
 
-const generateMockStories = (): Story[] => {
-    return Array.from({ length: 10 }).map((_, i) => ({
-        id: `story-${i}`,
-        user: {
-            id: `user-${i}`,
-            username: `Creator_${Math.floor(Math.random() * 1000)}`,
-            avatarUrl: `https://picsum.photos/seed/avatar${i}/100/100`,
-            followers: 100,
-            following: 10
-        },
-        imageUrl: `https://picsum.photos/seed/story${i}v3/400/800`,
-        timestamp: `${Math.floor(Math.random() * 12) + 1}h`,
-        viewed: Math.random() > 0.7,
-        products: Math.random() > 0.6 ? [MOCK_PRODUCTS_LIST[Math.floor(Math.random() * MOCK_PRODUCTS_LIST.length)]] : []
-    }));
+const generateMockPins = (count: number, topicSeed?: string): Pin[] => {
+  return Array.from({ length: count }).map((_, i) => ({
+      id: `${Date.now()}-${i}`,
+      title: topicSeed || "Design",
+      description: "A curated pin.",
+      imageUrl: `https://picsum.photos/seed/${i + Date.now()}/600/800`,
+      type: 'image',
+      width: 600,
+      height: Math.random() > 0.5 ? 800 : 600,
+      tags: ['design'],
+      likes: Math.floor(Math.random() * 1000),
+      author: generateMockUser()
+  }));
 };
-
-const generateMockPins = (count: number, topicSeed?: string, tagsOverride?: string[]): Pin[] => {
-  return Array.from({ length: count }).map((_, i) => {
-    const topic = topicSeed || DEFAULT_TOPICS[Math.floor(Math.random() * DEFAULT_TOPICS.length)];
-    const isLandscape = Math.random() > 0.7;
-    const width = 600;
-    const height = isLandscape ? Math.floor(Math.random() * 100 + 350) : Math.floor(Math.random() * (900 - 500 + 1)) + 500;
-    
-    const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    const isExclusive = Math.random() > 0.9;
-    
-    const rand = Math.random();
-    let type: 'image' | 'video' | 'idea' = 'image';
-    if (rand > 0.85) type = 'video';
-    else if (rand > 0.70) type = 'idea';
-
-    const slides: PinSlide[] = type === 'idea' ? Array.from({ length: 3 }).map((_, si) => ({
-        id: `${id}-slide-${si}`,
-        type: 'image',
-        url: `https://picsum.photos/seed/${id}slide${si}/600/900`
-    })) : [];
-    
-    const taggedProducts = Math.random() > 0.7 
-        ? [MOCK_PRODUCTS_LIST[Math.floor(Math.random() * MOCK_PRODUCTS_LIST.length)]] 
-        : [];
-
-    return {
-      id,
-      title: topic,
-      description: `A curated exploration of ${topic.toLowerCase()}. Visual innovation meets timeless design.`,
-      imageUrl: `https://picsum.photos/seed/${id}v2/${width}/${height}`,
-      type: type,
-      videoUrl: type === 'video' ? 'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/720/Big_Buck_Bunny_720_10s_1MB.mp4' : undefined,
-      slides: type === 'idea' ? slides : undefined,
-      width,
-      height,
-      tags: tagsOverride || [topic.split(' ')[0], 'inspiration', 'design'],
-      likes: Math.floor(Math.random() * 2000),
-      isExclusive: isExclusive,
-      taggedProducts: taggedProducts,
-      monetization: {
-          adsEnabled: type === 'video', 
-          isSubscriberOnly: isExclusive
-      },
-      author: {
-        id: `user-${i}`,
-        username: `creator_${Math.floor(Math.random() * 999)}`,
-        avatarUrl: `https://picsum.photos/seed/${id}avatar/100/100`,
-        followers: Math.floor(Math.random() * 10000),
-        following: Math.floor(Math.random() * 500),
-        bio: 'Just another creative soul wandering through the digital expanse.'
-      }
-    };
-  });
-};
-
-const ToastNotification = ({ show, type, title, message, onDismiss, onAction }: { show: boolean, type: 'message' | 'call', title: string, message: string, onDismiss: () => void, onAction: () => void }) => {
-    if (!show) return null;
-    return (
-        <div 
-            className="fixed top-24 right-6 z-[250] bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-100 p-4 w-80 animate-in slide-in-from-right-full duration-500 cursor-pointer group"
-            onClick={onAction}
-        >
-            <button onClick={(e) => {e.stopPropagation(); onDismiss()}} className="absolute top-2 right-2 text-gray-400 hover:text-gray-600">
-                <X size={14}/>
-            </button>
-            <div className="flex gap-3 items-start">
-                <div className={`p-3 rounded-full ${type === 'message' ? 'bg-blue-100 text-blue-600' : 'bg-emerald-100 text-emerald-600'}`}>
-                    {type === 'message' ? <MessageSquare size={20}/> : <Phone size={20}/>}
-                </div>
-                <div>
-                    <h4 className="font-bold text-gray-900 text-sm">{title}</h4>
-                    <p className="text-xs text-gray-500 mt-0.5">{message}</p>
-                    <span className="text-[10px] font-bold text-emerald-600 mt-2 block group-hover:translate-x-1 transition-transform">
-                        {type === 'message' ? 'Reply Now →' : 'Answer →'}
-                    </span>
-                </div>
-            </div>
-        </div>
-    );
-}
 
 const App: React.FC = () => {
   const [viewState, setViewState] = useState<ViewState>(ViewState.HOME);
   const [historyStack, setHistoryStack] = useState<ViewState[]>([ViewState.HOME]);
   const [historyIndex, setHistoryIndex] = useState(0);
-
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [hasOnboarded, setHasOnboarded] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(true);
+  const [currentUser] = useState<User>(generateMockUser());
+  const [boards, setBoards] = useState<Board[]>(generateMockBoards(currentUser.id));
+  const [homePins, setHomePins] = useState<Pin[]>([]);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedPin, setSelectedPin] = useState<Pin | null>(null);
+  const [selectedBoard, setSelectedBoard] = useState<Board | null>(null);
+  const [showCookieConsent, setShowCookieConsent] = useState(true);
+
+  useEffect(() => {
+     setHomePins(generateMockPins(20));
+  }, []);
 
   const navigateTo = (newState: ViewState) => {
       const newHistory = historyStack.slice(0, historyIndex + 1);
@@ -239,617 +102,55 @@ const App: React.FC = () => {
       }
   };
 
-  const [currentUser] = useState<User>(generateMockUser());
-  const [boards, setBoards] = useState<Board[]>(generateMockBoards(currentUser.id));
-  const [homePins, setHomePins] = useState<Pin[]>([]);
-  const [stories, setStories] = useState<Story[]>([]);
-  const [searchPins, setSearchPins] = useState<Pin[]>([]);
-  const [selectedPin, setSelectedPin] = useState<Pin | null>(null);
-  const [selectedBoard, setSelectedBoard] = useState<Board | null>(null);
-  const [activeCategory, setActiveCategory] = useState("For You");
-  
-  const [viewingUser, setViewingUser] = useState<User | null>(null);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isCreateBoardModalOpen, setIsCreateBoardModalOpen] = useState(false);
-  
-  const [userListModalConfig, setUserListModalConfig] = useState<{isOpen: boolean, title: string, users: User[], initialTab: 'followers'|'following'} | null>(null);
-  const [activeStoryIndex, setActiveStoryIndex] = useState<number | null>(null);
-  const [currentQuery, setCurrentQuery] = useState("");
-  const [isSearching, setIsSearching] = useState(false);
-  
-  const [searchFilters, setSearchFilters] = useState<{
-      type: 'all' | 'image' | 'video',
-      orientation: 'any' | 'portrait' | 'landscape' | 'square',
-      color: string | null
-  }>({
-      type: 'all',
-      orientation: 'any',
-      color: null
-  });
-
-  const [visualSearchImage, setVisualSearchImage] = useState<string | null>(null);
-  const [visualSearchScanning, setVisualSearchScanning] = useState(false);
-
-  const [stash, setStash] = useState<Pin[]>([]);
-  const [showStash, setShowStash] = useState(false);
-  const [isCanvasMode, setIsCanvasMode] = useState(false);
-  const [showCreativeDock, setShowCreativeDock] = useState(false);
-  const [toast, setToast] = useState<{show: boolean, type: 'message' | 'call', title: string, message: string} | null>(null);
-
-  const categoryScrollRef = useRef<HTMLDivElement>(null);
-  const storiesScrollRef = useRef<HTMLDivElement>(null);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (isLoggedIn && hasOnboarded) {
-        loadPersonalizedFeed();
-    }
-  }, [isLoggedIn, hasOnboarded]); 
-  
-  const handleLogin = () => {
-      setIsLoggedIn(true);
-      setShowAuthModal(false);
-  };
-  
-  const handleOnboardingComplete = (interests: string[]) => {
-      setHasOnboarded(true);
-      setLoading(true);
-      setTimeout(() => {
-          setHomePins(generateMockPins(30, interests[0]));
-          setStories(generateMockStories());
-          setLoading(false);
-      }, 800);
-      
-      setTimeout(() => {
-        setToast({
-            show: true,
-            type: 'message',
-            title: 'Sarah_UX',
-            message: 'Hey! Did you see the new moodboard?'
-        });
-        setTimeout(() => setToast(null), 5000);
-      }, 5000);
-  };
-
-  const loadPersonalizedFeed = async () => {
-      setLoading(true);
-      try {
-          await new Promise(r => setTimeout(r, 500));
-          const newPins = generateMockPins(30);
-          setHomePins(newPins);
-          setStories(generateMockStories());
-      } finally {
-          setLoading(false);
-      }
-  };
-
-  const handleMagicShuffle = () => {
-      setLoading(true);
-      setTimeout(() => {
-          const shuffled = [...homePins].sort(() => Math.random() - 0.5);
-          setHomePins(shuffled);
-          setLoading(false);
-      }, 600);
-  };
-
-  const handleSearch = async (query: string) => {
-    navigateTo(ViewState.SEARCH);
-    setCurrentQuery(query);
-    setLoading(true);
-    setIsSearching(true);
-    setSearchFilters({ type: 'all', orientation: 'any', color: null });
-    
-    setTimeout(() => {
-        setSearchPins(generateMockPins(30, query)); 
-        setLoading(false);
-        setIsSearching(false);
-    }, 800);
-  };
-
-  const filteredSearchPins = searchPins.filter(pin => {
-      if (searchFilters.type === 'image' && pin.type !== 'image') return false;
-      if (searchFilters.type === 'video' && pin.type !== 'video') return false;
-      
-      if (searchFilters.orientation === 'portrait' && pin.width >= pin.height) return false;
-      if (searchFilters.orientation === 'landscape' && pin.width <= pin.height) return false;
-      if (searchFilters.orientation === 'square' && Math.abs(pin.width - pin.height) > 10) return false;
-      return true;
-  });
-
-  const handleFilterChange = (key: keyof typeof searchFilters, value: any) => {
-      const newFilters = { ...searchFilters, [key]: value };
-      setSearchFilters(newFilters);
-      
-      if (key === 'color' && value) {
-          setLoading(true);
-          setTimeout(() => {
-              setSearchPins(generateMockPins(20, `${currentQuery} ${value}`));
-              setLoading(false);
-          }, 500);
-      }
-  };
-
-  const handleVisualSearch = (file: File) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-          if (e.target?.result) {
-              setVisualSearchImage(e.target.result as string);
-              navigateTo(ViewState.VISUAL_SEARCH);
-              setVisualSearchScanning(true);
-              
-              setTimeout(() => {
-                  setVisualSearchScanning(false);
-                  setSearchPins(generateMockPins(15, "Similar Texture"));
-              }, 2500);
-          }
-      };
-      reader.readAsDataURL(file);
-  };
-
-  const handlePinClick = async (pin: Pin) => {
-    setSelectedPin(pin);
-  };
-
-  const handleUserClick = (user: User) => {
-      if (user.id === currentUser.id) {
-          navigateTo(ViewState.PROFILE);
-      } else {
-          setViewingUser(user);
-          navigateTo(ViewState.USER_PROFILE);
-      }
-  };
-
-  const handleSavePin = (pin: Pin, boardId?: string) => {
-      const targetBoardId = boardId || boards[0].id;
-      setBoards(prev => prev.map(b => {
-          if (b.id === targetBoardId) {
-              if (b.pins.includes(pin.id)) return b;
-              return { ...b, pins: [...b.pins, pin.id] };
-          }
-          return b;
-      }));
-  };
-
-  const handleCreateBoardTrigger = () => {
-      setIsCreateBoardModalOpen(true);
-  };
-
-  const handleFinalizeCreateBoard = (boardData: { title: string; description: string; isPrivate: boolean; collaborators: string[] }) => {
-      const newBoard: Board = {
-          id: `b-${Date.now()}`,
-          title: boardData.title,
-          description: boardData.description,
-          pins: [],
-          isPrivate: boardData.isPrivate,
-          collaborators: [
-              {...currentUser, role: 'owner'},
-              ...boardData.collaborators.map((c, i) => ({
-                  id: `collab-${i}-${Date.now()}`,
-                  username: c.split('@')[0], 
-                  avatarUrl: `https://picsum.photos/seed/${c}/100/100`,
-                  email: c,
-                  followers: 0,
-                  following: 0,
-                  role: 'viewer' as const
-              }))
-          ],
-          createdAt: new Date().toISOString()
-      };
-      setBoards([...boards, newBoard]);
-      setIsCreateBoardModalOpen(false);
-      
-      confetti({
-          particleCount: 150,
-          spread: 80,
-          origin: { y: 0.3 },
-          colors: ['#34d399', '#60a5fa', '#f472b6']
-      });
-  };
-
-  const handleInviteToBoard = (email: string, role: 'editor' | 'viewer') => {
-      if(!selectedBoard) return;
-      
-      const newCollaborator: Collaborator = {
-          id: `collab-${Date.now()}`,
-          username: email.split('@')[0],
-          avatarUrl: `https://picsum.photos/seed/${email}/100/100`,
-          email: email,
-          followers: 0,
-          following: 0,
-          role: role
-      };
-
-      const updatedBoard = {
-          ...selectedBoard,
-          collaborators: [...selectedBoard.collaborators, newCollaborator]
-      };
-
-      setBoards(prev => prev.map(b => b.id === selectedBoard.id ? updatedBoard : b));
-      setSelectedBoard(updatedBoard);
-
-      confetti({
-          particleCount: 150,
-          spread: 80,
-          origin: { y: 0.3 },
-          colors: ['#34d399', '#60a5fa', '#f472b6']
-      });
-  };
-
-  const handleMoreLikeThis = (pin: Pin) => {
-      const query = `More like ${pin.title}`;
-      handleSearch(query);
-  };
-
-  const handleAddToStash = (pin: Pin) => {
-      if (!stash.find(p => p.id === pin.id)) {
-          setStash(prev => [...prev, pin]);
-          setShowStash(true);
-      }
-  };
-
-  const handleCreatePin = (newPin: Pin, boardId?: string) => {
-      setHomePins(prev => [newPin, ...prev]);
-      if (boardId) {
-          handleSavePin(newPin, boardId);
-      }
-      confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 }
-      });
-  };
-
-  const handleCreateStory = (newStory: Story) => {
-      setStories(prev => [newStory, ...prev]);
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#34d399', '#10b981']
-      });
-  };
-
-  const openUserList = (type: 'followers' | 'following', user: User) => {
-      const count = type === 'followers' ? 15 : 10;
-      const users = generateMockUserList(count);
-      setUserListModalConfig({
-          isOpen: true,
-          title: type === 'followers' ? 'Followers' : 'Following',
-          users: users,
-          initialTab: type
-      });
-  };
-
-  const scrollCategories = (direction: 'left' | 'right') => {
-      if (categoryScrollRef.current) {
-          const scrollAmount = 300;
-          categoryScrollRef.current.scrollBy({
-              left: direction === 'left' ? -scrollAmount : scrollAmount,
-              behavior: 'smooth'
-          });
-      }
-  };
-
-  const scrollStories = (direction: 'left' | 'right') => {
-      if (storiesScrollRef.current) {
-          const scrollAmount = 400;
-          storiesScrollRef.current.scrollBy({
-              left: direction === 'left' ? -scrollAmount : scrollAmount,
-              behavior: 'smooth'
-          });
-      }
-  }
-
   const renderContent = () => {
-      if (loading) {
-          return (
-            <div className="flex flex-col items-center justify-center mt-32 gap-6 animate-in fade-in duration-700">
-                <div className="relative">
-                    <div className="w-16 h-16 rounded-full border-4 border-emerald-100 border-t-emerald-500 animate-spin"></div>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-8 h-8 rounded-full bg-emerald-500 animate-pulse"></div>
-                    </div>
-                </div>
-                <p className="text-gray-400 font-bold text-xl tracking-wide uppercase">Discovering...</p>
-            </div>
-          );
-      }
-
       switch (viewState) {
-          case ViewState.MONETIZATION:
-              return <MonetizationDashboard onClose={goBack} />;
-
-          case ViewState.MESSAGES:
+          case ViewState.HOME:
               return (
-                  <Messages 
-                    currentUser={currentUser}
-                    onClose={goBack}
-                    onViewProfile={handleUserClick}
-                  />
-              );
-
-          case ViewState.VISUAL_SEARCH:
-              return (
-                  <div className="flex flex-col items-center w-full animate-in slide-in-from-bottom-10">
-                      <div className="relative w-full max-w-2xl aspect-[16/9] mb-12 rounded-[32px] overflow-hidden shadow-2xl group bg-black">
-                          {visualSearchImage && <img src={visualSearchImage} className="w-full h-full object-contain opacity-80" />}
-                          
-                          {visualSearchScanning ? (
-                              <div className="absolute inset-0 z-10">
-                                  <div className="absolute top-0 left-0 w-full h-1 bg-emerald-400 shadow-[0_0_20px_rgba(52,211,153,1)] animate-[scan_2s_ease-in-out_infinite]"></div>
-                                  <div className="absolute inset-0 flex items-center justify-center">
-                                      <div className="bg-black/50 backdrop-blur-md px-6 py-3 rounded-full text-emerald-400 font-mono flex items-center gap-3 border border-emerald-500/30">
-                                          <Loader2 className="animate-spin" /> ANALYZING PATTERNS...
-                                      </div>
-                                  </div>
-                              </div>
-                          ) : (
-                              <div className="absolute inset-0 z-10 p-8">
-                                  <div className="absolute top-1/3 left-1/4 w-4 h-4 bg-white rounded-full animate-ping"></div>
-                                  <div className="absolute top-1/3 left-1/4 w-4 h-4 bg-white rounded-full flex items-center justify-center cursor-pointer hover:scale-125 transition">
-                                      <div className="w-2 h-2 bg-emerald-600 rounded-full"></div>
-                                  </div>
-                                  <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur px-6 py-2 rounded-full text-sm font-bold shadow-lg">
-                                      We found similar styles
-                                  </div>
-                              </div>
-                          )}
-                      </div>
-
-                      {!visualSearchScanning && (
-                          <div className="w-full">
-                              <h2 className="text-2xl font-bold mb-6 px-2">Visual Matches</h2>
-                              <div className="masonry-grid pb-24">
-                                  {searchPins.map(pin => (
-                                      <PinCard 
-                                        key={pin.id} 
-                                        pin={pin} 
-                                        onClick={handlePinClick} 
-                                        onSave={handleSavePin} 
-                                        onMoreLikeThis={handleMoreLikeThis} 
-                                        onStash={handleAddToStash} 
-                                        onTagClick={handleSearch}
-                                        onUserClick={handleUserClick}
-                                        boards={boards} 
-                                      />
-                                  ))}
-                              </div>
-                          </div>
-                      )}
+                  <div className="masonry-grid pb-24 px-4">
+                      {homePins.map(pin => (
+                          <PinCard 
+                            key={pin.id} 
+                            pin={pin} 
+                            onClick={(p) => setSelectedPin(p)} 
+                            onSave={() => {}} 
+                            onMoreLikeThis={() => {}} 
+                            onStash={() => {}} 
+                            onTagClick={() => {}}
+                            boards={boards} 
+                          />
+                      ))}
                   </div>
               );
-
           case ViewState.PROFILE:
-              return (
-                  <Profile 
-                    user={currentUser} 
-                    boards={boards} 
-                    savedPins={[]} 
-                    onCreateBoard={handleCreateBoardTrigger}
-                    onOpenBoard={(b) => { setSelectedBoard(b); navigateTo(ViewState.BOARD); }}
-                    onShowFollowers={() => openUserList('followers', currentUser)}
-                    onShowFollowing={() => openUserList('following', currentUser)}
-                  />
-              );
-          
-          case ViewState.USER_PROFILE:
-              if(!viewingUser) return null;
-              return (
-                  <UserProfile 
-                    user={viewingUser}
-                    pins={generateMockPins(15)} 
-                    onBack={goBack}
-                    onPinClick={handlePinClick}
-                    onShowFollowers={() => openUserList('followers', viewingUser)}
-                    onShowFollowing={() => openUserList('following', viewingUser)}
-                  />
-              );
-
+              return <Profile user={currentUser} boards={boards} savedPins={[]} onCreateBoard={() => {}} onOpenBoard={(b) => { setSelectedBoard(b); navigateTo(ViewState.BOARD); }} onShowFollowers={() => {}} onShowFollowing={() => {}} />;
           case ViewState.BOARD:
-              if (!selectedBoard) return null;
-              const boardPins = selectedBoard.pins.length > 0 
-                ? generateMockPins(selectedBoard.pins.length, selectedBoard.title)
-                : [];
-              return (
-                  <BoardDetail 
-                    board={selectedBoard}
-                    pins={boardPins}
-                    allBoards={boards}
-                    onBack={() => goBack()}
-                    onPinClick={handlePinClick}
-                    onInvite={handleInviteToBoard}
-                    onMoreLikeThis={handleMoreLikeThis}
-                    onStash={handleAddToStash}
-                    onTagClick={handleSearch}
-                  />
-              );
-
-          case ViewState.SEARCH:
-              return (
-                  <>
-                    <div className="mb-8 flex flex-col gap-4">
-                        <div className="flex items-center gap-4 overflow-x-auto pb-2 scrollbar-hide px-2">
-                             <div className="flex bg-gray-100 p-1 rounded-full flex-shrink-0">
-                                 {['all', 'image', 'video'].map(type => (
-                                     <button
-                                        key={type}
-                                        onClick={() => handleFilterChange('type', type)}
-                                        className={`px-4 py-2 rounded-full text-sm font-bold capitalize transition ${searchFilters.type === type ? 'bg-white shadow-sm text-black' : 'text-gray-500 hover:text-gray-800'}`}
-                                     >
-                                         {type}
-                                     </button>
-                                 ))}
-                             </div>
-
-                             <div className="w-px h-8 bg-gray-200"></div>
-
-                             <div className="flex items-center gap-2 flex-shrink-0">
-                                 {['any', 'portrait', 'landscape', 'square'].map(orient => (
-                                     <button
-                                        key={orient}
-                                        onClick={() => handleFilterChange('orientation', orient)}
-                                        className={`px-4 py-2.5 rounded-full text-sm font-bold capitalize transition border ${searchFilters.orientation === orient ? 'bg-black text-white border-black' : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'}`}
-                                     >
-                                         {orient}
-                                     </button>
-                                 ))}
-                             </div>
-                             
-                             <div className="w-px h-8 bg-gray-200"></div>
-
-                             <div className="flex items-center gap-2 flex-shrink-0">
-                                 {COLORS.map(color => (
-                                     <button
-                                        key={color.name}
-                                        onClick={() => handleFilterChange('color', searchFilters.color === color.name ? null : color.name)}
-                                        className={`w-8 h-8 rounded-full border-2 transition ${searchFilters.color === color.name ? 'scale-110 ring-2 ring-offset-2 ring-gray-200' : 'hover:scale-110'}`}
-                                        style={{ backgroundColor: color.hex, borderColor: color.name === 'White' ? '#e5e7eb' : 'transparent' }}
-                                        title={color.name}
-                                     />
-                                 ))}
-                             </div>
-                        </div>
-                    </div>
-
-                    <div className={`masonry-grid pb-24 ${isCanvasMode ? 'gap-0' : ''}`}>
-                        {filteredSearchPins.length > 0 ? filteredSearchPins.map(pin => (
-                            <PinCard 
-                                key={pin.id} 
-                                pin={pin} 
-                                onClick={handlePinClick} 
-                                onSave={handleSavePin} 
-                                onMoreLikeThis={handleMoreLikeThis} 
-                                onStash={handleAddToStash} 
-                                onTagClick={handleSearch}
-                                onUserClick={handleUserClick}
-                                boards={boards} 
-                            />
-                        )) : (
-                            <div className="col-span-full py-20 text-center text-gray-400 flex flex-col items-center">
-                                <Archive size={48} className="mb-4 opacity-20"/>
-                                <h3 className="text-xl font-bold mb-2">No results found</h3>
-                                <p>Try adjusting your filters or search for something else.</p>
-                                <button 
-                                    onClick={() => setSearchFilters({ type: 'all', orientation: 'any', color: null })}
-                                    className="mt-6 px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-full font-bold transition"
-                                >
-                                    Clear Filters
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                  </>
-              );
-
-          case ViewState.HOME:
+              if(!selectedBoard) return <div>404 Board Not Found</div>;
+              return <BoardDetail board={selectedBoard} pins={[]} allBoards={boards} onBack={goBack} onPinClick={() => {}} onInvite={() => {}} onMoreLikeThis={() => {}} onStash={() => {}} onTagClick={() => {}} />;
           default:
               return (
-                  <>
-                      <div className="relative mb-8 mt-4 group/stories">
-                         <button 
-                            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/60 backdrop-blur-xl rounded-full shadow-lg flex items-center justify-center text-gray-800 opacity-0 group-hover/stories:opacity-100 hover:bg-white hover:scale-110 transition-all duration-300 -ml-2"
-                            onClick={() => scrollStories('left')}
-                         >
-                            <ChevronLeft size={28} />
-                         </button>
-                         <button 
-                            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/60 backdrop-blur-xl rounded-full shadow-lg flex items-center justify-center text-gray-800 opacity-0 group-hover/stories:opacity-100 hover:bg-white hover:scale-110 transition-all duration-300 -mr-2"
-                            onClick={() => scrollStories('right')}
-                         >
-                            <ChevronRight size={28} />
-                         </button>
-
-                         <div 
-                            ref={storiesScrollRef}
-                            className="flex gap-4 px-2 overflow-x-auto [&::-webkit-scrollbar]:hidden py-4 snap-x snap-mandatory"
-                            style={{ maskImage: 'linear-gradient(to right, transparent 0%, black 2%, black 98%, transparent 100%)' }}
-                         >
-                             <div 
-                                onClick={() => setIsCreateModalOpen(true)}
-                                className="flex-shrink-0 w-36 h-64 rounded-2xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer group hover:border-emerald-500 hover:bg-emerald-50/30 transition-all snap-start"
-                             >
-                                 <div className="w-14 h-14 rounded-full bg-gray-100 group-hover:bg-emerald-100 text-gray-400 group-hover:text-emerald-600 flex items-center justify-center mb-3 transition-colors shadow-sm">
-                                     <Plus size={28} />
-                                 </div>
-                                 <span className="text-sm font-bold text-gray-500">Add Story</span>
-                             </div>
-
-                             {stories.map((story, i) => (
-                                 <div 
-                                    key={story.id} 
-                                    className="flex-shrink-0 w-36 h-64 relative rounded-2xl overflow-hidden cursor-pointer group snap-start transition-transform duration-300 hover:-translate-y-2 hover:shadow-2xl ring-2 ring-transparent hover:ring-emerald-400"
-                                    onClick={() => setActiveStoryIndex(i)}
-                                 >
-                                     <img 
-                                        src={story.imageUrl} 
-                                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                                        loading="lazy"
-                                     />
-                                     <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-transparent to-black/80"></div>
-                                     
-                                     {!story.viewed && (
-                                         <div className="absolute inset-0 ring-4 ring-inset ring-emerald-500/80 rounded-2xl"></div>
-                                     )}
-
-                                     {i % 3 === 0 && (
-                                         <div className="absolute top-3 right-3 bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded-sm shadow-sm animate-pulse">
-                                             LIVE
-                                         </div>
-                                     )}
-
-                                     <div className="absolute bottom-4 left-3 right-3 flex flex-col gap-1">
-                                         <div className="flex items-center gap-2">
-                                            <div className="w-8 h-8 rounded-full border-2 border-emerald-500 p-0.5 overflow-hidden bg-black">
-                                                <img src={story.user.avatarUrl} className="w-full h-full rounded-full object-cover"/>
-                                            </div>
-                                            <span className="text-xs font-bold text-white truncate drop-shadow-md">{story.user.username}</span>
-                                         </div>
-                                     </div>
-                                 </div>
-                             ))}
-                         </div>
+                  <div className="flex flex-col items-center justify-center h-[60vh] text-center">
+                      <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6">
+                          <AlertTriangle size={40} className="text-gray-400" />
                       </div>
-
-                      <div className={`masonry-grid pb-24 animate-in fade-in duration-500 ${isCanvasMode ? 'gap-0 [&_img]:rounded-none [&_div]:rounded-none' : ''} transition-all duration-500`}>
-                          {homePins.map(pin => (
-                              <PinCard 
-                                key={pin.id} 
-                                pin={pin} 
-                                onClick={handlePinClick} 
-                                onSave={handleSavePin} 
-                                onMoreLikeThis={handleMoreLikeThis} 
-                                onStash={handleAddToStash} 
-                                onTagClick={handleSearch}
-                                onUserClick={handleUserClick}
-                                boards={boards} 
-                              />
-                          ))}
-                      </div>
-                  </>
+                      <h2 className="text-3xl font-black text-gray-900 mb-2">Page Not Found</h2>
+                      <p className="text-gray-500 mb-8">The page you are looking for doesn't exist or has been moved.</p>
+                      <button onClick={() => navigateTo(ViewState.HOME)} className="px-8 py-3 bg-black text-white rounded-full font-bold">Go Home</button>
+                  </div>
               );
       }
   };
 
   return (
-    <div className={`min-h-screen text-gray-900 font-sans selection:bg-emerald-200 selection:text-emerald-900 relative transition-colors duration-500 ${isCanvasMode ? 'bg-black text-white' : 'bg-white'}`}>
+    <div className="min-h-screen bg-white text-gray-900 font-sans">
+      {!isLoggedIn && <AuthModal onLogin={() => setIsLoggedIn(true)} onClose={() => {}} />}
       
-      {showAuthModal && !isLoggedIn && (
-          <AuthModal onLogin={handleLogin} onClose={() => handleLogin()} />
-      )}
-
-      {isLoggedIn && !hasOnboarded && (
-          <Onboarding onComplete={handleOnboardingComplete} />
-      )}
-
       <Header 
-        onSearch={handleSearch} 
-        onVisualSearch={handleVisualSearch}
-        onHomeClick={() => { navigateTo(ViewState.HOME); setCurrentQuery(""); setVisualSearchImage(null); }}
+        onSearch={() => {}} 
+        onVisualSearch={() => {}}
+        onHomeClick={() => navigateTo(ViewState.HOME)}
         onProfileClick={() => navigateTo(ViewState.PROFILE)}
         onMessagesClick={() => navigateTo(ViewState.MESSAGES)}
-        onMonetizationClick={() => navigateTo(ViewState.MONETIZATION)}
-        currentQuery={currentQuery}
+        onMonetizationClick={() => {}}
         canGoBack={historyIndex > 0}
         canGoForward={historyIndex < historyStack.length - 1}
         onBack={goBack}
@@ -857,216 +158,48 @@ const App: React.FC = () => {
         onCreateClick={() => setIsCreateModalOpen(true)}
       />
 
-      {toast && (
-          <ToastNotification 
-            show={toast.show} 
-            type={toast.type} 
-            title={toast.title} 
-            message={toast.message} 
-            onDismiss={() => setToast(null)} 
-            onAction={() => {
-                setToast(null);
-                navigateTo(ViewState.MESSAGES);
-            }} 
-          />
-      )}
-      
-      {viewState === ViewState.HOME && (
-          <div className="w-full z-40 flex justify-center pointer-events-none mt-2">
-             <div className="w-full max-w-[1920px] px-4 relative pointer-events-auto group/nav">
-                <button 
-                    onClick={() => scrollCategories('left')}
-                    className="absolute left-6 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/80 backdrop-blur-xl rounded-full shadow-2xl border border-white/50 flex items-center justify-center text-gray-800 hover:bg-black hover:text-white transition-all active:scale-95 opacity-0 group-hover/nav:opacity-100"
-                >
-                    <ChevronLeft size={24} strokeWidth={2.5} />
-                </button>
-                <button 
-                    onClick={() => scrollCategories('right')}
-                    className="absolute right-6 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/80 backdrop-blur-xl rounded-full shadow-2xl border border-white/50 flex items-center justify-center text-gray-800 hover:bg-black hover:text-white transition-all active:scale-95 opacity-0 group-hover/nav:opacity-100"
-                >
-                    <ChevronRight size={24} strokeWidth={2.5} />
-                </button>
-                <div 
-                    ref={categoryScrollRef}
-                    className="flex items-center gap-3 overflow-x-auto [&::-webkit-scrollbar]:hidden px-2 py-3 scroll-smooth mask-linear-fade"
-                    style={{ maskImage: 'linear-gradient(to right, transparent 0%, black 2%, black 98%, transparent 100%)' }}
-                >
-                    <button 
-                        className={`px-6 py-3.5 rounded-full font-black text-sm whitespace-nowrap transition-all duration-300 backdrop-blur-md shadow-lg flex-shrink-0 flex items-center gap-2
-                             ${activeCategory === "For You" ? 'bg-black text-white scale-105' : 'bg-white/80 text-gray-700 hover:bg-white hover:scale-105'}`}
-                        onClick={() => setActiveCategory("For You")}
-                    >
-                        <Sparkles size={16} className={activeCategory === "For You" ? "text-yellow-400 fill-yellow-400" : ""} /> For You
-                    </button>
-                    {DEFAULT_TOPICS.map((cat, i) => (
-                        <button 
-                            key={i}
-                            onClick={() => { setActiveCategory(cat); handleSearch(cat); }}
-                            className={`px-6 py-3.5 rounded-full font-bold text-sm whitespace-nowrap transition-all duration-300 backdrop-blur-md shadow-sm border border-transparent flex-shrink-0
-                                ${activeCategory === cat 
-                                    ? 'bg-emerald-500 text-white shadow-emerald-200/50 shadow-lg transform scale-105' 
-                                    : 'bg-white/90 hover:bg-white text-gray-600 hover:text-black hover:shadow-md'}`}
-                        >
-                            {cat}
-                        </button>
-                    ))}
-                </div>
-             </div>
-          </div>
-      )}
-      
-      <main className={`px-4 max-w-[1920px] mx-auto min-h-screen transition-all duration-500 pt-4`}>
-        {renderContent()}
+      <main className="max-w-[1920px] mx-auto pt-4">
+          {renderContent()}
       </main>
-
-      <div className={`fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-2xl border-t border-gray-200 shadow-[0_-10px_60px_rgba(0,0,0,0.15)] transition-transform duration-500 ease-in-out ${showStash ? 'translate-y-0' : 'translate-y-full'}`}>
-          <div 
-             className="absolute -top-12 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-8 py-3 rounded-t-3xl cursor-pointer flex items-center gap-3 font-bold shadow-2xl hover:pb-5 transition-all"
-             onClick={() => setShowStash(!showStash)}
-          >
-              <Archive size={20} className="text-emerald-400" /> Stash ({stash.length})
-          </div>
-          <div className="p-8 h-72 flex flex-col">
-             <div className="flex justify-between items-center mb-6">
-                 <h3 className="text-2xl font-black text-gray-900 tracking-tight">Idea Stash</h3>
-                 <div className="flex gap-4">
-                     <button className="text-sm font-bold text-gray-500 hover:text-red-500 transition-colors" onClick={() => setStash([])}>Clear All</button>
-                     <button onClick={() => setShowStash(false)} className="p-2 hover:bg-gray-100 rounded-full"><X size={24}/></button>
-                 </div>
-             </div>
-             
-             {stash.length === 0 ? (
-                 <div className="flex-1 flex flex-col items-center justify-center text-gray-400 border-3 border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
-                     <Archive size={48} className="mb-4 opacity-20"/>
-                     <p className="font-medium">Drop ideas here to organize later</p>
-                 </div>
-             ) : (
-                 <div className="flex gap-6 overflow-x-auto pb-6 h-full scrollbar-thin px-2">
-                     {stash.map((pin, i) => (
-                         <div key={i} className="relative min-w-[140px] w-[140px] h-full rounded-2xl overflow-hidden group shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
-                             <img src={pin.imageUrl} className="w-full h-full object-cover" />
-                             <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                             <button 
-                                className="absolute top-2 right-2 bg-white p-1.5 rounded-full hover:bg-red-500 hover:text-white transition shadow-sm"
-                                onClick={() => setStash(stash.filter(p => p.id !== pin.id))}
-                             >
-                                 <X size={14} />
-                             </button>
-                         </div>
-                     ))}
-                 </div>
-             )}
-          </div>
-      </div>
-
-      <div 
-        className="fixed bottom-8 right-8 z-40 flex flex-col items-end gap-3"
-        onMouseEnter={() => setShowCreativeDock(true)}
-        onMouseLeave={() => setShowCreativeDock(false)}
-      >
-         <div className={`flex flex-col gap-3 items-end transition-all duration-300 ${showCreativeDock ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}>
-             <button 
-                className="p-4 bg-white rounded-full shadow-xl text-gray-800 hover:text-emerald-600 transition-all duration-300 flex items-center gap-3 pr-6 hover:scale-105"
-                onClick={() => setIsSettingsOpen(true)}
-             >
-                <SettingsIcon size={22} />
-                <span className="font-bold">Settings</span>
-            </button>
-            <button 
-                className={`p-4 rounded-full shadow-xl transition-all duration-300 flex items-center gap-3 pr-6 hover:scale-105
-                    ${isCanvasMode ? 'bg-black text-emerald-400 ring-2 ring-emerald-500' : 'bg-white text-gray-800'}`}
-                onClick={() => setIsCanvasMode(!isCanvasMode)}
-            >
-                <Layers size={22} />
-                <span className="font-bold">Canvas Mode</span>
-            </button>
-             <button 
-                className="p-4 bg-white rounded-full shadow-xl text-gray-800 hover:text-purple-600 transition-all duration-300 flex items-center gap-3 pr-6 hover:scale-105"
-                onClick={handleMagicShuffle}
-             >
-                <RefreshCw size={22} className={loading ? "animate-spin" : ""} />
-                <span className="font-bold">Magic Shuffle</span>
-            </button>
-         </div>
-         <button 
-            className={`w-16 h-16 rounded-full shadow-2xl flex items-center justify-center transition-all duration-500 hover:scale-110 z-50
-                ${showCreativeDock ? 'bg-black text-white rotate-90' : 'bg-white text-black'}`}
-         >
-             <Zap size={28} className={showCreativeDock ? "text-yellow-400 fill-yellow-400" : ""} />
-         </button>
-      </div>
 
       {selectedPin && (
         <PinDetail 
           pin={selectedPin} 
           onClose={() => setSelectedPin(null)} 
-          relatedPins={generateMockPins(10, selectedPin.tags[0])}
-          boards={boards}
-          onTagClick={handleSearch}
-          onUserClick={handleUserClick}
+          relatedPins={generateMockPins(10)} 
+          boards={boards} 
+          onTagClick={() => {}} 
         />
       )}
 
-      {activeStoryIndex !== null && (
-          <StoryViewer 
-            initialIndex={activeStoryIndex}
-            stories={stories}
-            onClose={() => setActiveStoryIndex(null)}
-            onUserClick={handleUserClick}
-          />
-      )}
-      
       {isCreateModalOpen && (
           <CreateModal 
-            onClose={() => setIsCreateModalOpen(false)}
-            onCreatePin={handleCreatePin}
-            onCreateStory={handleCreateStory}
-            user={currentUser}
-            boards={boards}
-          />
-      )}
-
-      {isCreateBoardModalOpen && (
-          <CreateBoardModal 
-            onClose={() => setIsCreateBoardModalOpen(false)}
-            onCreate={handleFinalizeCreateBoard}
-          />
-      )}
-
-      {isSettingsOpen && (
-          <SettingsModal 
+            onClose={() => setIsCreateModalOpen(false)} 
+            onCreatePin={(pin) => setHomePins([pin, ...homePins])} 
+            onCreateStory={() => {}} 
             user={currentUser} 
-            onClose={() => setIsSettingsOpen(false)} 
+            boards={boards} 
           />
       )}
 
-      {userListModalConfig && (
-          <UserListModal 
-            title={userListModalConfig.title}
-            users={userListModalConfig.users}
-            initialTab={userListModalConfig.initialTab}
-            currentUser={currentUser}
-            onClose={() => setUserListModalConfig(null)}
-            onToggleFollow={(id) => { console.log('Follow toggled for', id); }}
-            onRemoveFollower={userListModalConfig.initialTab === 'followers' && viewState === ViewState.PROFILE ? (id) => { console.log('Removed', id) } : undefined}
-          />
+      {/* Cookie Consent */}
+      {showCookieConsent && (
+          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 md:p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-[200] flex flex-col md:flex-row items-center justify-between gap-4 animate-in slide-in-from-bottom-full">
+               <div className="flex items-start gap-4 max-w-2xl">
+                   <div className="p-3 bg-emerald-50 rounded-full text-emerald-600 hidden md:block">
+                       <Cookie size={24} />
+                   </div>
+                   <div>
+                       <h4 className="font-bold text-gray-900">We use cookies to improve your experience.</h4>
+                       <p className="text-sm text-gray-500">By using our site, you agree to our use of cookies to deliver personalized content and analyze site traffic.</p>
+                   </div>
+               </div>
+               <div className="flex gap-3 w-full md:w-auto">
+                   <button onClick={() => setShowCookieConsent(false)} className="flex-1 md:flex-none px-6 py-3 bg-gray-100 font-bold rounded-full hover:bg-gray-200 transition">Decline</button>
+                   <button onClick={() => setShowCookieConsent(false)} className="flex-1 md:flex-none px-8 py-3 bg-black text-white font-bold rounded-full hover:bg-gray-900 transition shadow-lg">Accept</button>
+               </div>
+          </div>
       )}
-
-      <style>{`
-        @keyframes scan {
-          0% { top: 0%; opacity: 0; }
-          10% { opacity: 1; }
-          90% { opacity: 1; }
-          100% { top: 100%; opacity: 0; }
-        }
-        .scrollbar-hide::-webkit-scrollbar {
-            display: none;
-        }
-        .scrollbar-hide {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-      `}</style>
     </div>
   );
 };
