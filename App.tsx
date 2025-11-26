@@ -14,7 +14,7 @@ import { Messages } from './components/Messages';
 import { MonetizationDashboard } from './components/MonetizationDashboard'; 
 import { Pin, User, Board, ViewState, Filter, Story, Collaborator, Product } from './types';
 import { generatePinDetails, getPersonalizedTopics } from './services/geminiService';
-import { Wand2, Plus, SlidersHorizontal, ArrowUp, ScanLine, Loader2, Archive, X, ArrowRight, Zap, Play, ChevronLeft, ChevronRight, Palette, Layout, Sparkles, RefreshCw, Layers, Settings as SettingsIcon, MessageSquare, Phone } from 'lucide-react';
+import { Wand2, Plus, SlidersHorizontal, ArrowUp, ScanLine, Loader2, Archive, X, ArrowRight, Zap, Play, ChevronLeft, ChevronRight, Palette, Layout, Sparkles, RefreshCw, Layers, Settings as SettingsIcon, MessageSquare, Phone, Grid, Video, Image as ImageIcon, Circle } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 const DEFAULT_TOPICS = [
@@ -22,6 +22,18 @@ const DEFAULT_TOPICS = [
   "Abstract 3D Art", "Forest Cabins", "Ceramic Design", "Swiss Typography",
   "Streetwear 2025", "Cozy Lofts", "Futuristic UI/UX", "Matcha Aesthetic", "Plant Based",
   "Solar Punk", "DIY Tech", "Tattoo Art", "Glassmorphism", "Retro Anime", "Vaporwave", "Minimalist Setup"
+];
+
+const COLORS = [
+    { name: 'Red', hex: '#ef4444' },
+    { name: 'Orange', hex: '#f97316' },
+    { name: 'Yellow', hex: '#eab308' },
+    { name: 'Green', hex: '#22c55e' },
+    { name: 'Blue', hex: '#3b82f6' },
+    { name: 'Purple', hex: '#a855f7' },
+    { name: 'Pink', hex: '#ec4899' },
+    { name: 'Black', hex: '#000000' },
+    { name: 'White', hex: '#ffffff' },
 ];
 
 const MOCK_PRODUCTS_LIST: Product[] = [
@@ -116,8 +128,11 @@ const generateMockStories = (): Story[] => {
 const generateMockPins = (count: number, topicSeed?: string, tagsOverride?: string[]): Pin[] => {
   return Array.from({ length: count }).map((_, i) => {
     const topic = topicSeed || DEFAULT_TOPICS[Math.floor(Math.random() * DEFAULT_TOPICS.length)];
+    // Randomize dimensions to simulate portrait/landscape
+    const isLandscape = Math.random() > 0.7;
     const width = 600;
-    const height = Math.floor(Math.random() * (900 - 500 + 1)) + 500;
+    const height = isLandscape ? Math.floor(Math.random() * 100 + 350) : Math.floor(Math.random() * (900 - 500 + 1)) + 500;
+    
     const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const isExclusive = Math.random() > 0.9;
     const isVideo = Math.random() > 0.85; // 15% chance of being a video
@@ -232,6 +247,17 @@ const App: React.FC = () => {
   const [currentQuery, setCurrentQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   
+  // Advanced Search Filters
+  const [searchFilters, setSearchFilters] = useState<{
+      type: 'all' | 'image' | 'video',
+      orientation: 'any' | 'portrait' | 'landscape' | 'square',
+      color: string | null
+  }>({
+      type: 'all',
+      orientation: 'any',
+      color: null
+  });
+
   const [visualSearchImage, setVisualSearchImage] = useState<string | null>(null);
   const [visualSearchScanning, setVisualSearchScanning] = useState(false);
 
@@ -291,12 +317,44 @@ const App: React.FC = () => {
     setCurrentQuery(query);
     setLoading(true);
     setIsSearching(true);
+    // Reset filters on new search
+    setSearchFilters({ type: 'all', orientation: 'any', color: null });
     
     setTimeout(() => {
-        setSearchPins(generateMockPins(20, query));
+        setSearchPins(generateMockPins(30, query)); // Generate more to allow filtering
         setLoading(false);
         setIsSearching(false);
     }, 800);
+  };
+
+  // Re-filter pins when search filters change
+  const filteredSearchPins = searchPins.filter(pin => {
+      // Filter by Type
+      if (searchFilters.type === 'image' && pin.type !== 'image') return false;
+      if (searchFilters.type === 'video' && pin.type !== 'video') return false;
+      
+      // Filter by Orientation
+      if (searchFilters.orientation === 'portrait' && pin.width >= pin.height) return false;
+      if (searchFilters.orientation === 'landscape' && pin.width <= pin.height) return false;
+      if (searchFilters.orientation === 'square' && Math.abs(pin.width - pin.height) > 10) return false;
+
+      // Color is handled by simulated regeneration for visual effect, but we can also filter if needed
+      // For this demo, selecting a color regenerates the "search" results to mock finding that color.
+      return true;
+  });
+
+  const handleFilterChange = (key: keyof typeof searchFilters, value: any) => {
+      const newFilters = { ...searchFilters, [key]: value };
+      setSearchFilters(newFilters);
+      
+      // If color changes, simulate a fetch for that color specifically
+      if (key === 'color' && value) {
+          setLoading(true);
+          setTimeout(() => {
+              setSearchPins(generateMockPins(20, `${currentQuery} ${value}`));
+              setLoading(false);
+          }, 500);
+      }
   };
 
   const handleVisualSearch = (file: File) => {
@@ -581,18 +639,55 @@ const App: React.FC = () => {
           case ViewState.SEARCH:
               return (
                   <>
-                    <div className="mb-8 flex items-center gap-4 overflow-x-auto pb-4 pt-2 scrollbar-hide px-2">
-                         <button className="flex items-center gap-2 px-6 py-3 bg-black text-white rounded-full font-bold text-sm shadow-md flex-shrink-0 hover:bg-gray-800 transition">
-                            <SlidersHorizontal size={16}/> Filter
-                         </button>
-                         {["Color", "Material", "Style", "Brand"].map((f, i) => (
-                             <button key={i} className="px-6 py-3 bg-white border border-gray-200 hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700 text-gray-800 rounded-full font-bold text-sm transition flex-shrink-0 shadow-sm">
-                                 {f}
-                             </button>
-                         ))}
+                    <div className="mb-8 flex flex-col gap-4">
+                        <div className="flex items-center gap-4 overflow-x-auto pb-2 scrollbar-hide px-2">
+                             {/* Media Type Filter */}
+                             <div className="flex bg-gray-100 p-1 rounded-full flex-shrink-0">
+                                 {['all', 'image', 'video'].map(type => (
+                                     <button
+                                        key={type}
+                                        onClick={() => handleFilterChange('type', type)}
+                                        className={`px-4 py-2 rounded-full text-sm font-bold capitalize transition ${searchFilters.type === type ? 'bg-white shadow-sm text-black' : 'text-gray-500 hover:text-gray-800'}`}
+                                     >
+                                         {type}
+                                     </button>
+                                 ))}
+                             </div>
+
+                             <div className="w-px h-8 bg-gray-200"></div>
+
+                             {/* Orientation Filter */}
+                             <div className="flex items-center gap-2 flex-shrink-0">
+                                 {['any', 'portrait', 'landscape', 'square'].map(orient => (
+                                     <button
+                                        key={orient}
+                                        onClick={() => handleFilterChange('orientation', orient)}
+                                        className={`px-4 py-2.5 rounded-full text-sm font-bold capitalize transition border ${searchFilters.orientation === orient ? 'bg-black text-white border-black' : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'}`}
+                                     >
+                                         {orient}
+                                     </button>
+                                 ))}
+                             </div>
+                             
+                             <div className="w-px h-8 bg-gray-200"></div>
+
+                             {/* Color Filter */}
+                             <div className="flex items-center gap-2 flex-shrink-0">
+                                 {COLORS.map(color => (
+                                     <button
+                                        key={color.name}
+                                        onClick={() => handleFilterChange('color', searchFilters.color === color.name ? null : color.name)}
+                                        className={`w-8 h-8 rounded-full border-2 transition ${searchFilters.color === color.name ? 'scale-110 ring-2 ring-offset-2 ring-gray-200' : 'hover:scale-110'}`}
+                                        style={{ backgroundColor: color.hex, borderColor: color.name === 'White' ? '#e5e7eb' : 'transparent' }}
+                                        title={color.name}
+                                     />
+                                 ))}
+                             </div>
+                        </div>
                     </div>
+
                     <div className={`masonry-grid pb-24 ${isCanvasMode ? 'gap-0' : ''}`}>
-                        {searchPins.map(pin => (
+                        {filteredSearchPins.length > 0 ? filteredSearchPins.map(pin => (
                             <PinCard 
                                 key={pin.id} 
                                 pin={pin} 
@@ -604,7 +699,19 @@ const App: React.FC = () => {
                                 onUserClick={handleUserClick}
                                 boards={boards} 
                             />
-                        ))}
+                        )) : (
+                            <div className="col-span-full py-20 text-center text-gray-400 flex flex-col items-center">
+                                <Archive size={48} className="mb-4 opacity-20"/>
+                                <h3 className="text-xl font-bold mb-2">No results found</h3>
+                                <p>Try adjusting your filters or search for something else.</p>
+                                <button 
+                                    onClick={() => setSearchFilters({ type: 'all', orientation: 'any', color: null })}
+                                    className="mt-6 px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-full font-bold transition"
+                                >
+                                    Clear Filters
+                                </button>
+                            </div>
+                        )}
                     </div>
                   </>
               );

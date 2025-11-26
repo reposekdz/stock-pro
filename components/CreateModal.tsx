@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Upload, Image as ImageIcon, Sparkles, Video, Check, Loader2, Wand2, Plus, Sliders, Sun, Contrast, Droplet, MapPin, Calendar, Tag, Mic, ChevronDown, Save, Type, Sticker, Music, AlignCenter, Layout, Move, RotateCw, Crop, Smartphone, Layers, GripHorizontal, Palette, Share2, MousePointer2, Scissors, FastForward, PlayCircle, PauseCircle, Film, ShoppingBag, DollarSign, Lock, Trash2, Type as TypeIcon, Circle, Square, Subtitles, Play, RotateCcw, Monitor, Megaphone, Ratio } from 'lucide-react';
+import { X, Upload, Image as ImageIcon, Sparkles, Video, Check, Loader2, Wand2, Plus, Sliders, Sun, Contrast, Droplet, MapPin, Calendar, Tag, Mic, ChevronDown, Save, Type, Sticker, Music, AlignCenter, Layout, Move, RotateCw, Crop, Smartphone, Layers, GripHorizontal, Palette, Share2, MousePointer2, Scissors, FastForward, PlayCircle, PauseCircle, Film, ShoppingBag, DollarSign, Lock, Trash2, Type as TypeIcon, Circle, Square, Subtitles, Play, RotateCcw, Monitor, Megaphone, Ratio, Volume2, Gauge, Activity } from 'lucide-react';
 import { User, Pin, Story, Board, ImageEditSettings, Product } from '../types';
 
 interface CreateModalProps {
@@ -45,6 +45,8 @@ const ASPECT_RATIOS = [
     { id: '9:16', label: 'Story', value: '9 / 16' },
 ];
 
+const VIDEO_SPEEDS = [0.5, 1, 1.5, 2, 4];
+
 const MOCK_PRODUCTS: Product[] = [
     { id: 'p1', name: 'Ceramic Vase', price: 45, currency: '$', imageUrl: 'https://picsum.photos/seed/vase/100/100', affiliateLink: '#' },
     { id: 'p2', name: 'Linen Throw', price: 89, currency: '$', imageUrl: 'https://picsum.photos/seed/linen/100/100', affiliateLink: '#' },
@@ -65,7 +67,7 @@ export const CreateModal: React.FC<CreateModalProps> = ({ onClose, onCreatePin, 
     const [isGenerating, setIsGenerating] = useState(false);
 
     // Pro Studio State
-    const [activeTool, setActiveTool] = useState<'canvas' | 'filters' | 'adjust' | 'text' | 'stickers' | 'crop'>('canvas');
+    const [activeTool, setActiveTool] = useState<'canvas' | 'filters' | 'adjust' | 'text' | 'stickers' | 'crop' | 'trim' | 'speed' | 'volume'>('canvas');
     const [editSettings, setEditSettings] = useState<ImageEditSettings>({
         brightness: 100,
         contrast: 100,
@@ -78,10 +80,16 @@ export const CreateModal: React.FC<CreateModalProps> = ({ onClose, onCreatePin, 
         aspectRatio: 'auto'
     });
     
-    // Additional view settings not saved to DB but used for editing state
+    // Additional view settings
     const [blur, setBlur] = useState(0);
     const [sepia, setSepia] = useState(0);
     const [vignette, setVignette] = useState(0);
+
+    // Video Editing Settings
+    const [trimRange, setTrimRange] = useState<[number, number]>([0, 100]);
+    const [playbackSpeed, setPlaybackSpeed] = useState(1);
+    const [volume, setVolume] = useState(100);
+    const [isSceneDetecting, setIsSceneDetecting] = useState(false);
 
     const [canvasItems, setCanvasItems] = useState<CanvasItem[]>([]);
     const [draggingItemId, setDraggingItemId] = useState<string | null>(null);
@@ -141,6 +149,15 @@ export const CreateModal: React.FC<CreateModalProps> = ({ onClose, onCreatePin, 
             setGeneratingCaptions(false);
             addCanvasItem('text', "Welcome to my new video!");
         }, 1500);
+    };
+
+    const handleSceneDetect = () => {
+        setIsSceneDetecting(true);
+        setTimeout(() => {
+            setIsSceneDetecting(false);
+            // In a real app, this would chop the video or add markers
+            alert("Smart Scene Detection: 3 scenes found. Transitions optimized.");
+        }, 2000);
     };
 
     const addCanvasItem = (type: 'text' | 'sticker', content: string) => {
@@ -294,6 +311,13 @@ export const CreateModal: React.FC<CreateModalProps> = ({ onClose, onCreatePin, 
         };
     };
 
+    useEffect(() => {
+        if (videoRef.current) {
+            videoRef.current.playbackRate = playbackSpeed;
+            videoRef.current.volume = volume / 100;
+        }
+    }, [playbackSpeed, volume]);
+
     const toggleVideoPlay = () => {
         if (videoRef.current) {
             if (isVideoPlaying) videoRef.current.pause();
@@ -305,6 +329,86 @@ export const CreateModal: React.FC<CreateModalProps> = ({ onClose, onCreatePin, 
     // Render Tools Panel Content
     const renderToolsPanel = () => {
         switch (activeTool) {
+            case 'trim':
+                 return (
+                    <div className="p-4 space-y-6">
+                        <h3 className="text-xs font-bold text-gray-500 uppercase">Trim & Cut</h3>
+                        <div className="space-y-4">
+                            <div className="h-12 bg-gray-100 rounded-lg relative overflow-hidden flex items-center px-2">
+                                {/* Visual representation of video frames would go here */}
+                                <div className="absolute inset-y-0 bg-emerald-500/20" style={{ left: `${trimRange[0]}%`, right: `${100 - trimRange[1]}%` }}></div>
+                                <div className="absolute top-0 bottom-0 w-4 bg-emerald-500 rounded-l cursor-ew-resize" style={{ left: `${trimRange[0]}%` }}></div>
+                                <div className="absolute top-0 bottom-0 w-4 bg-emerald-500 rounded-r cursor-ew-resize" style={{ left: `${trimRange[1]}%` }}></div>
+                            </div>
+                            <div className="flex justify-between text-xs font-bold text-gray-500">
+                                <span>{Math.floor((trimRange[0] / 100) * 10)}s</span>
+                                <span>{Math.floor((trimRange[1] / 100) * 10)}s</span>
+                            </div>
+                            <input 
+                                type="range" 
+                                min="0" max="100" 
+                                value={trimRange[0]} 
+                                onChange={(e) => setTrimRange([Number(e.target.value), trimRange[1]])}
+                                className="w-full accent-emerald-500 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                            />
+                             <input 
+                                type="range" 
+                                min="0" max="100" 
+                                value={trimRange[1]} 
+                                onChange={(e) => setTrimRange([trimRange[0], Number(e.target.value)])}
+                                className="w-full accent-emerald-500 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                            />
+                        </div>
+                        <button 
+                            onClick={handleSceneDetect}
+                            className="w-full py-3 bg-indigo-100 text-indigo-700 font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-indigo-200 transition"
+                        >
+                            {isSceneDetecting ? <Loader2 className="animate-spin" size={16}/> : <Activity size={16}/>}
+                            Smart Scene Detect
+                        </button>
+                    </div>
+                 );
+            case 'speed':
+                return (
+                    <div className="p-4 space-y-6">
+                        <h3 className="text-xs font-bold text-gray-500 uppercase">Playback Speed</h3>
+                        <div className="grid grid-cols-5 gap-2">
+                            {VIDEO_SPEEDS.map(speed => (
+                                <button
+                                    key={speed}
+                                    onClick={() => setPlaybackSpeed(speed)}
+                                    className={`py-3 rounded-xl font-bold text-sm transition ${playbackSpeed === speed ? 'bg-black text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                                >
+                                    {speed}x
+                                </button>
+                            ))}
+                        </div>
+                        <p className="text-xs text-gray-400 text-center">Adjusting speed will affect audio pitch unless preserved.</p>
+                    </div>
+                );
+            case 'volume':
+                return (
+                     <div className="p-4 space-y-6">
+                        <h3 className="text-xs font-bold text-gray-500 uppercase">Volume Mixer</h3>
+                        <div className="space-y-4">
+                            <div className="flex justify-between text-xs font-bold text-gray-600">
+                                <span className="flex items-center gap-1"><Volume2 size={14}/> Video Sound</span>
+                                <span>{volume}%</span>
+                            </div>
+                            <input 
+                                type="range" 
+                                min="0" 
+                                max="200" 
+                                value={volume} 
+                                onChange={(e) => setVolume(Number(e.target.value))}
+                                className="w-full accent-emerald-500 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                            />
+                        </div>
+                        <button className="w-full py-3 border border-gray-200 rounded-xl font-bold text-sm hover:bg-gray-50 flex items-center justify-center gap-2">
+                            <Music size={16}/> Add Background Music
+                        </button>
+                    </div>
+                );
             case 'crop':
                 return (
                     <div className="p-4 space-y-6">
@@ -521,8 +625,41 @@ export const CreateModal: React.FC<CreateModalProps> = ({ onClose, onCreatePin, 
                         <Wand2 size={20} />
                     </div>
                     <div className="flex-1 flex flex-col gap-2 w-full px-2">
+                        <button 
+                            onClick={() => setActiveTool('canvas')}
+                            className={`flex flex-col items-center justify-center w-full aspect-square rounded-xl transition ${activeTool === 'canvas' ? 'bg-emerald-50 text-emerald-600' : 'text-gray-400 hover:bg-gray-50 hover:text-gray-900'}`}
+                        >
+                            <MousePointer2 size={20} className="mb-1"/>
+                            <span className="text-[9px] font-bold uppercase">Move</span>
+                        </button>
+                        
+                        {mode === 'video' && (
+                            <>
+                                <button 
+                                    onClick={() => setActiveTool('trim')}
+                                    className={`flex flex-col items-center justify-center w-full aspect-square rounded-xl transition ${activeTool === 'trim' ? 'bg-emerald-50 text-emerald-600' : 'text-gray-400 hover:bg-gray-50 hover:text-gray-900'}`}
+                                >
+                                    <Scissors size={20} className="mb-1"/>
+                                    <span className="text-[9px] font-bold uppercase">Trim</span>
+                                </button>
+                                 <button 
+                                    onClick={() => setActiveTool('speed')}
+                                    className={`flex flex-col items-center justify-center w-full aspect-square rounded-xl transition ${activeTool === 'speed' ? 'bg-emerald-50 text-emerald-600' : 'text-gray-400 hover:bg-gray-50 hover:text-gray-900'}`}
+                                >
+                                    <Gauge size={20} className="mb-1"/>
+                                    <span className="text-[9px] font-bold uppercase">Speed</span>
+                                </button>
+                                <button 
+                                    onClick={() => setActiveTool('volume')}
+                                    className={`flex flex-col items-center justify-center w-full aspect-square rounded-xl transition ${activeTool === 'volume' ? 'bg-emerald-50 text-emerald-600' : 'text-gray-400 hover:bg-gray-50 hover:text-gray-900'}`}
+                                >
+                                    <Volume2 size={20} className="mb-1"/>
+                                    <span className="text-[9px] font-bold uppercase">Vol</span>
+                                </button>
+                            </>
+                        )}
+
                         {[
-                            { id: 'canvas', icon: MousePointer2, label: 'Move' },
                             { id: 'crop', icon: Crop, label: 'Crop' },
                             { id: 'filters', icon: Palette, label: 'Filters' },
                             { id: 'adjust', icon: Sliders, label: 'Adjust' },
@@ -657,9 +794,6 @@ export const CreateModal: React.FC<CreateModalProps> = ({ onClose, onCreatePin, 
                                         <button onClick={handleGenerateCaptions} className="bg-black/60 backdrop-blur-md text-white px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 hover:bg-black">
                                             {generatingCaptions ? <Loader2 className="animate-spin" size={14}/> : <Subtitles size={14}/>} 
                                             {generatingCaptions ? 'Generating...' : 'AI Captions'}
-                                        </button>
-                                        <button className="bg-black/60 backdrop-blur-md text-white px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 hover:bg-black">
-                                            <Scissors size={14}/> Trim
                                         </button>
                                     </div>
                                 </>
