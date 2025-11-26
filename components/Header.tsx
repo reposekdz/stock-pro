@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Bell, MessageCircle, User as UserIcon, X, Camera, ArrowLeft, ArrowRight, Eye, Sparkles, Settings, Heart, UserPlus, Plus, TrendingUp, History, LogIn } from 'lucide-react';
+import { Search, Bell, MessageCircle, User as UserIcon, X, Camera, ArrowLeft, ArrowRight, Eye, Sparkles, Settings, Heart, UserPlus, Plus, TrendingUp, History, LogIn, ChevronLeft } from 'lucide-react';
 import { Notification } from '../types';
 
 interface HeaderProps {
@@ -39,6 +39,8 @@ export const Header: React.FC<HeaderProps> = ({
   const [searchValue, setSearchValue] = useState(currentQuery || '');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const [zenMode, setZenMode] = useState(false); // Innovation: Focus Mode
   const searchRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -55,6 +57,7 @@ export const Header: React.FC<HeaderProps> = ({
   const handleSearchSubmit = (query: string) => {
       onSearch(query);
       setShowSuggestions(false);
+      setIsMobileSearchOpen(false);
       // Update history
       const newHistory = [query, ...searchHistory.filter(h => h !== query)].slice(0, 5);
       setSearchHistory(newHistory);
@@ -68,10 +71,11 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="w-full px-4 pt-4 pb-2 z-[100]">
-      <div className="max-w-[1920px] mx-auto bg-white/80 backdrop-blur-2xl rounded-full px-3 py-3 shadow-[0_8px_32px_rgba(0,0,0,0.08)] border border-white/50 flex items-center justify-between gap-4 relative">
+    <header className="w-full px-4 pt-4 pb-2 z-[100] relative">
+      <div className={`max-w-[1920px] mx-auto bg-white/80 backdrop-blur-2xl rounded-full px-3 py-3 shadow-[0_8px_32px_rgba(0,0,0,0.08)] border border-white/50 flex items-center justify-between gap-4 relative transition-all duration-300 ${zenMode ? 'opacity-20 hover:opacity-100' : 'opacity-100'}`}>
         
-        <div className="flex items-center gap-4 pl-1">
+        {/* Left Side: Logo & Nav */}
+        <div className={`flex items-center gap-4 pl-1 ${isMobileSearchOpen ? 'hidden md:flex' : 'flex'}`}>
            <button onClick={onHomeClick} className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center text-white font-black text-2xl hover:scale-105 transition shadow-lg shadow-emerald-200">S</button>
            <div className="hidden md:flex gap-2">
                <button onClick={onBack} disabled={!canGoBack} className="p-2.5 rounded-full bg-gray-100 disabled:opacity-50 hover:bg-gray-200 transition"><ArrowLeft size={18}/></button>
@@ -79,9 +83,16 @@ export const Header: React.FC<HeaderProps> = ({
            </div>
         </div>
 
-        <div className="flex-1 relative group max-w-3xl mx-auto" ref={searchRef}>
+        {/* Search Bar - Responsive */}
+        <div className={`flex-1 relative group max-w-3xl mx-auto ${isMobileSearchOpen ? 'flex' : 'hidden md:block'}`} ref={searchRef}>
+             {isMobileSearchOpen && (
+                 <button onClick={() => setIsMobileSearchOpen(false)} className="md:hidden p-3 mr-2 bg-gray-100 rounded-full">
+                     <ChevronLeft size={20}/>
+                 </button>
+             )}
+            
             <div className={`flex items-center w-full bg-gray-100/50 hover:bg-gray-100 rounded-full px-4 transition-all duration-300 border border-transparent focus-within:bg-white focus-within:ring-4 focus-within:ring-emerald-100 focus-within:shadow-xl ${showSuggestions ? 'rounded-b-none rounded-t-[24px] bg-white ring-4 ring-emerald-100' : ''}`}>
-                 <Search className="text-gray-400" size={20} />
+                 <Search className="text-gray-400 flex-shrink-0" size={20} />
                  <input 
                     type="text"
                     className="w-full bg-transparent py-3.5 px-3 outline-none font-medium placeholder:text-gray-400"
@@ -91,6 +102,7 @@ export const Header: React.FC<HeaderProps> = ({
                     onFocus={() => setShowSuggestions(true)}
                     onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                     onKeyDown={handleKeyDown}
+                    autoFocus={isMobileSearchOpen}
                  />
                  {searchValue && <button onClick={() => setSearchValue('')} className="p-1 hover:bg-gray-200 rounded-full"><X size={16}/></button>}
             </div>
@@ -125,7 +137,22 @@ export const Header: React.FC<HeaderProps> = ({
             )}
         </div>
 
-        <div className="flex items-center gap-2 md:gap-3">
+        {/* Right Side Actions */}
+        <div className={`flex items-center gap-2 md:gap-3 ${isMobileSearchOpen ? 'hidden' : 'flex'}`}>
+            {/* Mobile Search Trigger */}
+            <button onClick={() => setIsMobileSearchOpen(true)} className="md:hidden p-3 bg-gray-100 rounded-full hover:bg-gray-200 transition text-gray-700">
+                <Search size={22} />
+            </button>
+
+            {/* Innovation: Zen Mode Toggle */}
+            <button 
+                onClick={() => setZenMode(!zenMode)} 
+                className={`hidden md:flex p-3 rounded-full transition ${zenMode ? 'bg-black text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                title="Zen Mode (Focus)"
+            >
+                <Eye size={22} />
+            </button>
+
             {isLoggedIn ? (
                 <>
                     <button onClick={onMessagesClick} className="p-3 bg-gray-100 rounded-full hover:bg-gray-200 transition text-gray-700 relative group">
@@ -142,14 +169,12 @@ export const Header: React.FC<HeaderProps> = ({
                     </button>
                 </>
             ) : (
-                <>
-                     <button onClick={onLoginClick} className="px-5 py-2.5 rounded-full font-bold text-gray-900 hover:bg-gray-100 transition">
-                         Log in
-                     </button>
-                     <button onClick={onLoginClick} className="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-full font-bold hover:shadow-lg hover:scale-105 transition shadow-emerald-200">
-                         Sign up
-                     </button>
-                </>
+                <button 
+                    onClick={onLoginClick} 
+                    className="px-8 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-full font-black text-lg hover:shadow-xl hover:scale-105 transition-all shadow-emerald-200 flex items-center gap-2"
+                >
+                    Start <Sparkles size={18} fill="currentColor"/>
+                </button>
             )}
         </div>
       </div>

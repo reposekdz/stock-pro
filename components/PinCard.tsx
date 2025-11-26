@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Share2, MoreHorizontal, ChevronDown, Check, ScanSearch, Heart, ExternalLink, RotateCcw, Play, Layers, ArrowUpRight, Edit2, Circle } from 'lucide-react';
+import { Share2, MoreHorizontal, ChevronDown, Check, ScanSearch, Heart, RotateCcw, Play, Layers, Edit2, Circle, Download } from 'lucide-react';
 import { Pin, Board, User } from '../types';
 
 interface PinCardProps {
@@ -35,6 +35,7 @@ export const PinCard: React.FC<PinCardProps> = ({
   const [isHovered, setIsHovered] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [tilt, setTilt] = useState({ x: 0, y: 0 }); // 3D Tilt State
   
   // Dominant Color Placeholder
   const [bgColor] = useState(() => {
@@ -48,9 +49,6 @@ export const PinCard: React.FC<PinCardProps> = ({
   
   const defaultBoard = boards[0];
   const [selectedBoard, setSelectedBoard] = useState<Board | null>(defaultBoard || null);
-
-  // Generate a realistic looking domain or use a fallback
-  const displayDomain = pin.videoUrl ? 'youtube.com' : 'behance.net';
 
   // Video Autoplay Logic
   useEffect(() => {
@@ -77,12 +75,24 @@ export const PinCard: React.FC<PinCardProps> = ({
     }
   };
 
+  const handleDownload = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      // Simulate Download
+      const link = document.createElement('a');
+      link.href = pin.imageUrl;
+      link.download = `stoc-${pin.id}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setShowMobileMenu(false);
+  };
+
   const handleTouchStart = () => {
       if (isSelectMode) return;
       longPressTimer.current = setTimeout(() => {
           setShowMobileMenu(true);
           if (navigator.vibrate) navigator.vibrate(50);
-      }, 600);
+      }, 500);
   };
 
   const handleTouchEnd = () => {
@@ -102,11 +112,6 @@ export const PinCard: React.FC<PinCardProps> = ({
       if(onUserClick) onUserClick(pin.author);
   }
 
-  const handleExternalLink = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      // In a real app, this would be pin.destinationLink
-  };
-
   const handleCardClick = (e: React.MouseEvent) => {
       if (isSelectMode && onSelect) {
           e.stopPropagation();
@@ -116,19 +121,49 @@ export const PinCard: React.FC<PinCardProps> = ({
       }
   };
 
+  // 3D Tilt Effect
+  const handleMouseMove = (e: React.MouseEvent) => {
+      if (!cardRef.current || isSelectMode || window.innerWidth < 768) return;
+      
+      const rect = cardRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+      
+      // Calculate rotation based on cursor position (max 3 degrees)
+      const rotateX = ((y - centerY) / centerY) * -3; 
+      const rotateY = ((x - centerX) / centerX) * 3;
+
+      setTilt({ x: rotateX, y: rotateY });
+  };
+
+  const handleMouseEnter = () => setIsHovered(true);
+  
+  const handleMouseLeave = () => {
+      setIsHovered(false);
+      setTilt({ x: 0, y: 0 });
+  };
+
   return (
     <div 
       ref={cardRef}
-      className={`relative mb-6 break-inside-avoid rounded-[16px] cursor-zoom-in group z-0 hover:z-20 transition-transform duration-200 ${isSelectMode ? 'cursor-default' : ''} ${isSelected ? 'scale-95' : ''}`}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      className={`relative mb-6 break-inside-avoid rounded-[16px] cursor-zoom-in group z-0 transition-all duration-300 ease-out ${isSelectMode ? 'cursor-default' : ''} ${isSelected ? 'scale-95' : ''}`}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onMouseMove={handleMouseMove}
       onClick={handleCardClick}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onTouchMove={handleTouchMove}
+      style={{
+          transform: isHovered && !isSelectMode ? `perspective(1000px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) scale(1.02)` : 'scale(1)',
+          zIndex: isHovered ? 50 : 'auto'
+      }}
     >
       <div 
-        className={`relative w-full rounded-[16px] overflow-hidden bg-gray-100 transition-all ${isSelected ? 'ring-4 ring-black' : ''}`}
+        className={`relative w-full rounded-[16px] overflow-hidden bg-gray-100 transition-all shadow-sm ${isHovered && !isSelectMode ? 'shadow-xl' : ''} ${isSelected ? 'ring-4 ring-black' : ''}`}
         style={{
             backgroundColor: bgColor
         }}
@@ -159,7 +194,6 @@ export const PinCard: React.FC<PinCardProps> = ({
                         aspectRatio: `${pin.width} / ${pin.height}`,
                         // Darken image slightly on hover like Pinterest
                         filter: isHovered && !isSelectMode ? 'brightness(70%)' : 'brightness(100%)',
-                        transform: isHovered && !isSelectMode ? 'scale(1.02)' : 'scale(1)'
                     }}
                     loading="lazy"
                   />
@@ -215,18 +249,7 @@ export const PinCard: React.FC<PinCardProps> = ({
                       </div>
     
                       {/* Bottom Section */}
-                      <div className="flex justify-between items-end relative z-20">
-                          {/* Link - Bottom Left */}
-                          <div className="flex gap-2">
-                              <button 
-                                  onClick={handleExternalLink}
-                                  className="flex items-center gap-1.5 px-3 py-2 bg-white/90 backdrop-blur-sm rounded-full text-black font-bold text-xs hover:bg-white transition shadow-sm truncate max-w-[120px]"
-                              >
-                                  <ArrowUpRight size={14} />
-                                  <span className="truncate">{displayDomain}</span>
-                              </button>
-                          </div>
-    
+                      <div className="flex justify-end items-end relative z-20">
                           {/* Utilities - Bottom Right */}
                           <div className="flex gap-2">
                               {/* Scan Lens Button */}
@@ -236,6 +259,15 @@ export const PinCard: React.FC<PinCardProps> = ({
                                   title="Visual Search"
                               >
                                   <ScanSearch size={16} />
+                              </button>
+
+                              {/* Download Button - Innovation */}
+                              <button 
+                                  className="p-2.5 bg-white/90 backdrop-blur-sm rounded-full text-black hover:bg-white transition shadow-sm"
+                                  onClick={handleDownload}
+                                  title="Download Image"
+                              >
+                                  <Download size={16} />
                               </button>
 
                               {isCreator ? (
@@ -272,16 +304,16 @@ export const PinCard: React.FC<PinCardProps> = ({
       
       {/* Mobile Long Press Menu */}
       {showMobileMenu && (
-          <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-md rounded-[16px] flex flex-col items-center justify-center animate-in fade-in duration-200" onClick={(e) => { e.stopPropagation(); setShowMobileMenu(false); }}>
-              <div className="flex gap-4 mb-4">
-                  <button className="w-14 h-14 bg-white rounded-full flex items-center justify-center text-gray-900 shadow-xl active:scale-90 transition" onClick={handleQuickSave}>
+          <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-md rounded-[16px] flex flex-col items-center justify-center animate-in fade-in duration-200" onClick={(e) => { e.stopPropagation(); setShowMobileMenu(false); }}>
+              <div className="flex gap-4 mb-6">
+                  <button className="w-14 h-14 bg-white rounded-full flex items-center justify-center text-gray-900 shadow-xl active:scale-90 transition hover:bg-emerald-50" onClick={handleQuickSave}>
                       {isSaved ? <Check size={24} /> : <Heart size={24} className="fill-emerald-500 text-emerald-500" />}
                   </button>
-                  <button className="w-14 h-14 bg-white rounded-full flex items-center justify-center text-gray-900 shadow-xl active:scale-90 transition">
-                      <Share2 size={24} />
+                  <button className="w-14 h-14 bg-white rounded-full flex items-center justify-center text-gray-900 shadow-xl active:scale-90 transition hover:bg-blue-50" onClick={handleDownload}>
+                      <Download size={24} />
                   </button>
-                  <button className="w-14 h-14 bg-white rounded-full flex items-center justify-center text-gray-900 shadow-xl active:scale-90 transition">
-                      <MoreHorizontal size={24} />
+                  <button className="w-14 h-14 bg-white rounded-full flex items-center justify-center text-gray-900 shadow-xl active:scale-90 transition hover:bg-purple-50">
+                      <Share2 size={24} />
                   </button>
               </div>
               <p className="text-white text-xs font-bold uppercase tracking-widest opacity-80">Quick Actions</p>

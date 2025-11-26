@@ -113,6 +113,15 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
       setZoomPosition({ x, y });
   };
 
+  const handleDownload = () => {
+      const link = document.createElement('a');
+      link.href = activeMediaUrl;
+      link.download = `stoc-${pin.id}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+  };
+
   const activeMediaUrl = pin.slides ? pin.slides[currentSlideIndex].url : pin.imageUrl;
   
   return (
@@ -186,6 +195,13 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
             
             <div className="sticky top-0 bg-white/95 backdrop-blur-xl z-30 p-6 flex justify-between items-center border-b border-gray-100">
                 <div className="flex gap-2">
+                    <button 
+                        onClick={handleDownload}
+                        className="p-3 hover:bg-gray-100 rounded-full text-gray-600 hover:text-black transition"
+                        title="Download Image"
+                    >
+                        <Download size={24}/>
+                    </button>
                     <button className="p-3 hover:bg-gray-100 rounded-full text-gray-600 hover:text-black transition"><MoreHorizontal size={24}/></button>
                     <button 
                         onClick={() => setShowShareSheet(true)}
