@@ -15,6 +15,8 @@ export interface User {
       requiredWatchHours: number;
       eligible: boolean;
   };
+  subscriptionPrice?: number; // Monthly price for exclusive content
+  subscriberCount?: number;
 }
 
 export interface Collaborator extends User {
@@ -43,6 +45,14 @@ export interface ImageEditSettings {
   aspectRatio: string;
 }
 
+export interface VideoEditSettings {
+    trimStart: number; // 0-100 percentage
+    trimEnd: number; // 0-100 percentage
+    volume: number;
+    speed: number;
+    hasCaptions: boolean;
+}
+
 export interface Product {
     id: string;
     name: string;
@@ -57,6 +67,15 @@ export interface MonetizationSettings {
     isSubscriberOnly: boolean;
     estimatedEarnings?: number;
     isPromoted?: boolean; // New for Sponsors
+    sponsorName?: string; // Brand name
+    campaignId?: string;
+}
+
+export interface PinSlide {
+    id: string;
+    type: 'image' | 'video';
+    url: string;
+    description?: string;
 }
 
 export interface Pin {
@@ -73,12 +92,14 @@ export interface Pin {
   location?: string;
   scheduledFor?: string;
   editSettings?: Partial<ImageEditSettings>;
+  videoSettings?: Partial<VideoEditSettings>;
   taggedProducts?: Product[];
   isExclusive?: boolean; // For subscribers
   
   // Video & Monetization Fields
-  type: 'image' | 'video';
+  type: 'image' | 'video' | 'idea';
   videoUrl?: string;
+  slides?: PinSlide[]; // For Idea Pins (Carousels)
   duration?: string; // e.g. "0:45"
   monetization?: MonetizationSettings;
   viewCount?: number;

@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from 'react';
-import { Plus, Settings, Share2, Camera, MapPin, Link as LinkIcon, Edit3, X, Globe, Instagram, Twitter } from 'lucide-react';
+import { Plus, Settings, Share2, Camera, MapPin, Link as LinkIcon, Edit3, X, Globe, Instagram, Twitter, Crown, TrendingUp, Check } from 'lucide-react';
 import { User, Board, Pin } from '../types';
 
 interface ProfileProps {
@@ -81,6 +81,11 @@ export const Profile: React.FC<ProfileProps> = ({ user, boards, savedPins, onCre
                     <div className="p-1.5 rounded-full bg-white shadow-xl">
                         <img src={avatarImage} alt={user.username} className="w-32 h-32 md:w-40 md:h-40 rounded-full object-cover border-4 border-gray-50" />
                     </div>
+                    {user.isCreator && (
+                        <div className="absolute bottom-2 left-2 bg-purple-600 text-white p-1.5 rounded-full border-4 border-white shadow-lg" title="Creator">
+                            <Crown size={16} fill="currentColor"/>
+                        </div>
+                    )}
                     <button 
                         onClick={() => avatarInputRef.current?.click()}
                         className="absolute bottom-2 right-2 p-2.5 bg-gray-900 text-white rounded-full border-4 border-white shadow-lg opacity-0 group-hover:opacity-100 transition-all scale-90 group-hover:scale-100"
@@ -90,7 +95,9 @@ export const Profile: React.FC<ProfileProps> = ({ user, boards, savedPins, onCre
                     <input type="file" ref={avatarInputRef} className="hidden" accept="image/*" onChange={handleAvatarChange} />
                 </div>
                 
-                <h1 className="text-4xl font-extrabold mb-1 text-gray-900 tracking-tight">{user.username}</h1>
+                <h1 className="text-4xl font-extrabold mb-1 text-gray-900 tracking-tight flex items-center gap-2">
+                    {user.username}
+                </h1>
                 <p className="text-gray-500 mb-4 font-medium">@stocpro_user</p>
                 
                 {/* Bio & Details */}
@@ -111,7 +118,7 @@ export const Profile: React.FC<ProfileProps> = ({ user, boards, savedPins, onCre
                      </div>
                 </div>
 
-                <div className="flex gap-6 text-sm font-bold text-gray-900 mb-8">
+                <div className="flex gap-6 text-sm font-bold text-gray-900 mb-8 items-center bg-gray-50 px-6 py-3 rounded-full border border-gray-100">
                     <button 
                         onClick={onShowFollowers}
                         className="text-center cursor-pointer hover:text-emerald-600 transition group"
@@ -127,18 +134,32 @@ export const Profile: React.FC<ProfileProps> = ({ user, boards, savedPins, onCre
                         <span className="text-lg">{user.following.toLocaleString()}</span>
                         <span className="text-gray-500 font-medium ml-1 group-hover:text-emerald-600/70">following</span>
                     </button>
+                    {user.isCreator && (
+                        <>
+                             <div className="w-px bg-gray-300 h-5 self-center"></div>
+                             <div className="text-center group">
+                                <span className="text-lg text-purple-600">145</span>
+                                <span className="text-gray-500 font-medium ml-1">subscribers</span>
+                             </div>
+                        </>
+                    )}
                 </div>
 
                 <div className="flex gap-3 mb-12">
-                    <button className="px-8 py-3 bg-gray-100 rounded-full font-bold hover:bg-gray-200 transition flex items-center gap-2">
-                        <Share2 size={18}/> Share
-                    </button>
                     <button 
                         onClick={() => setIsEditing(true)}
-                        className="px-8 py-3 bg-black text-white rounded-full font-bold hover:bg-gray-800 transition flex items-center gap-2 shadow-lg"
+                        className="px-6 py-3 bg-gray-100 text-gray-900 rounded-full font-bold hover:bg-gray-200 transition flex items-center gap-2"
                     >
                         <Edit3 size={18}/> Edit Profile
                     </button>
+                    <button className="px-6 py-3 bg-gray-100 rounded-full font-bold hover:bg-gray-200 transition flex items-center gap-2">
+                        <Share2 size={18}/> Share
+                    </button>
+                    {user.isCreator && (
+                        <button className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-full font-bold hover:shadow-lg hover:scale-105 transition flex items-center gap-2">
+                            <TrendingUp size={18} /> Business Hub
+                        </button>
+                    )}
                 </div>
             </div>
 

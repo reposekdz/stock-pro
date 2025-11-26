@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useRef } from 'react';
-import { X, MoreHorizontal, Share2, BadgeCheck, Heart, Smile, ChevronDown, Download, Maximize2, Crop, Sparkles, ShoppingBag, Search, Lock, Crown, Play, Pause, Volume2, VolumeX, Megaphone } from 'lucide-react';
+import { X, MoreHorizontal, Share2, BadgeCheck, Heart, Smile, ChevronDown, Download, Maximize2, Crop, Sparkles, ShoppingBag, Search, Lock, Crown, Play, Pause, Volume2, VolumeX, Megaphone, Briefcase, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Pin, Comment, Board, User, Product } from '../types';
 import { generateRelatedComments } from '../services/geminiService';
 import { PinCard } from './PinCard';
@@ -41,6 +41,9 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
   const [showAd, setShowAd] = useState(false);
   const [adTimer, setAdTimer] = useState(5);
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Carousel / Idea Pin State
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
 
   // Floating Reactions
   const [floatingEmojis, setFloatingEmojis] = useState<{id: number, char: string, left: number}[]>([]);
@@ -162,6 +165,16 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
       }
   }
 
+  const handlePrevSlide = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (currentSlideIndex > 0) setCurrentSlideIndex(currentSlideIndex - 1);
+  };
+
+  const handleNextSlide = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (pin.slides && currentSlideIndex < pin.slides.length - 1) setCurrentSlideIndex(currentSlideIndex + 1);
+  };
+
   // Calculate style based on editSettings if available
   const getImageStyle = () => {
       if (!pin.editSettings) return {
@@ -169,18 +182,18 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
            transformOrigin: `${zoomPosition.x}% ${zoomPosition.y}%`
       };
 
-      // If we have edit settings, we need to respect them + the zoom
       const { brightness, contrast, saturation, rotation, scale, cropX, cropY, filter } = pin.editSettings as any;
-      const filterStyle = filter && filter !== 'none' ? `contrast(1.2) saturate(1.3)` : ''; // Simplification for demo
-      
-      // Note: Full CSS filter matching from CreateModal would ideally be shared in a util
+      const filterStyle = filter && filter !== 'none' ? `contrast(1.2) saturate(1.3)` : ''; 
       
       return {
-          filter: `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%) ${filterStyle}`,
+          filter: `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%) ${filterStyle} ${pin.isExclusive ? 'blur(10px)' : ''}`, 
           transform: `translate(${cropX}%, ${cropY}%) rotate(${rotation}deg) scale(${scale * (isZooming ? 1.5 : 1)})`,
           transformOrigin: isZooming ? `${zoomPosition.x}% ${zoomPosition.y}%` : 'center center'
       };
   }
+  
+  const activeMediaUrl = pin.slides ? pin.slides[currentSlideIndex].url : pin.imageUrl;
+  const activeMediaType = pin.slides ? pin.slides[currentSlideIndex].type : pin.type;
 
   return (
     <div className="fixed inset-0 z-[100] bg-white flex flex-col md:flex-row animate-in fade-in duration-200">
@@ -202,16 +215,16 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
         >
             <div 
                 className="absolute inset-0 opacity-30 blur-3xl scale-110"
-                style={{ backgroundImage: `url(${pin.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+                style={{ backgroundImage: `url(${activeMediaUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
             ></div>
             
             <div className="relative z-10 w-full h-full flex items-center justify-center overflow-hidden">
-                {pin.type === 'video' ? (
+                {activeMediaType === 'video' ? (
                     <div className="relative w-full h-full flex items-center justify-center">
                         <video 
                             ref={videoRef}
-                            src={pin.videoUrl || pin.imageUrl} 
-                            poster={pin.imageUrl}
+                            src={activeMediaUrl} 
+                            poster={pin.imageUrl} // Fallback
                             className="max-w-full max-h-[90vh] object-contain"
                             loop
                             muted={isMuted}
@@ -247,11 +260,42 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
                     </div>
                 ) : (
                     <img 
-                        src={pin.imageUrl} 
+                        src={activeMediaUrl} 
                         alt={pin.title} 
                         className={`max-w-full max-h-[90vh] object-contain transition-transform duration-100 ease-linear ${isCropMode ? 'scale-90 opacity-50' : ''}`}
                         style={getImageStyle()}
                     />
+                )}
+
+                {/* Carousel Navigation */}
+                {pin.slides && pin.slides.length > 1 && (
+                    <>
+                        {currentSlideIndex > 0 && (
+                            <button 
+                                onClick={handlePrevSlide}
+                                className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-white/20 hover:bg-white rounded-full text-white hover:text-black transition backdrop-blur-md"
+                            >
+                                <ChevronLeft size={24} />
+                            </button>
+                        )}
+                        {currentSlideIndex < pin.slides.length - 1 && (
+                            <button 
+                                onClick={handleNextSlide}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-white/20 hover:bg-white rounded-full text-white hover:text-black transition backdrop-blur-md"
+                            >
+                                <ChevronRight size={24} />
+                            </button>
+                        )}
+                        {/* Slide Indicator */}
+                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
+                            {pin.slides.map((_, idx) => (
+                                <div 
+                                    key={idx} 
+                                    className={`w-2 h-2 rounded-full transition-all ${idx === currentSlideIndex ? 'bg-white w-4' : 'bg-white/50'}`}
+                                ></div>
+                            ))}
+                        </div>
+                    </>
                 )}
 
                 {/* Subscriber Lock Overlay */}
@@ -267,7 +311,7 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
                 )}
 
                 {/* Visual Dots (Shop the Look) */}
-                {!isZooming && !isCropMode && visualDots.map(dot => (
+                {!isZooming && !isCropMode && !pin.isExclusive && visualDots.map(dot => (
                     <div 
                         key={dot.id}
                         className="absolute w-6 h-6 z-30 cursor-pointer group/dot animate-in zoom-in duration-500"
@@ -294,17 +338,6 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
                         </div>
                     </div>
                 ))}
-                
-                {isCropMode && (
-                    <div className="absolute w-64 h-64 border-2 border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.7)] flex items-center justify-center">
-                         <div className="text-white font-bold bg-black/50 px-3 py-1 rounded-full text-sm backdrop-blur-md">Select Area</div>
-                         {/* Corner Markers */}
-                         <div className="absolute -top-1 -left-1 w-4 h-4 border-t-4 border-l-4 border-white"></div>
-                         <div className="absolute -top-1 -right-1 w-4 h-4 border-t-4 border-r-4 border-white"></div>
-                         <div className="absolute -bottom-1 -left-1 w-4 h-4 border-b-4 border-l-4 border-white"></div>
-                         <div className="absolute -bottom-1 -right-1 w-4 h-4 border-b-4 border-r-4 border-white"></div>
-                    </div>
-                )}
             </div>
 
             {/* Image Tools */}
@@ -328,7 +361,7 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
             </div>
             
             {/* Visual Search Hint */}
-            {!isCropMode && !isZooming && pin.type !== 'video' && (
+            {!isCropMode && !isZooming && activeMediaType !== 'video' && !pin.isExclusive && (
                 <div className="absolute top-8 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-md text-white px-4 py-2 rounded-full text-xs font-bold pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 border border-white/10">
                      <Search size={12} /> Hover to zoom • Click dots to shop
                 </div>
@@ -365,11 +398,11 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
                 {pin.monetization?.isPromoted && (
                     <div className="mb-4 bg-orange-50 text-orange-700 border border-orange-100 rounded-xl p-3 flex items-center gap-3">
                         <div className="p-2 bg-orange-100 rounded-lg">
-                            <Megaphone size={20} />
+                            <Briefcase size={20} />
                         </div>
                         <div>
-                            <p className="font-bold text-sm">Promoted</p>
-                            <p className="text-xs">This pin is sponsored content</p>
+                            <p className="font-bold text-sm">Sponsored by {pin.monetization.sponsorName || 'Brand Partner'}</p>
+                            <p className="text-xs">Paid partnership</p>
                         </div>
                     </div>
                 )}

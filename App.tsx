@@ -9,10 +9,13 @@ import { SettingsModal } from './components/SettingsModal';
 import { BoardDetail } from './components/BoardDetail';
 import { StoryViewer } from './components/StoryViewer';
 import { CreateModal } from './components/CreateModal';
+import { CreateBoardModal } from './components/CreateBoardModal';
 import { UserListModal } from './components/UserListModal';
 import { Messages } from './components/Messages';
 import { MonetizationDashboard } from './components/MonetizationDashboard'; 
-import { Pin, User, Board, ViewState, Filter, Story, Collaborator, Product } from './types';
+import { AuthModal } from './components/AuthModal';
+import { Onboarding } from './components/Onboarding';
+import { Pin, User, Board, ViewState, Filter, Story, Collaborator, Product, PinSlide } from './types';
 import { generatePinDetails, getPersonalizedTopics } from './services/geminiService';
 import { Wand2, Plus, SlidersHorizontal, ArrowUp, ScanLine, Loader2, Archive, X, ArrowRight, Zap, Play, ChevronLeft, ChevronRight, Palette, Layout, Sparkles, RefreshCw, Layers, Settings as SettingsIcon, MessageSquare, Phone, Grid, Video, Image as ImageIcon, Circle } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -120,7 +123,6 @@ const generateMockStories = (): Story[] => {
         imageUrl: `https://picsum.photos/seed/story${i}v3/400/800`,
         timestamp: `${Math.floor(Math.random() * 12) + 1}h`,
         viewed: Math.random() > 0.7,
-        // Add random products to 40% of stories
         products: Math.random() > 0.6 ? [MOCK_PRODUCTS_LIST[Math.floor(Math.random() * MOCK_PRODUCTS_LIST.length)]] : []
     }));
 };
@@ -128,16 +130,24 @@ const generateMockStories = (): Story[] => {
 const generateMockPins = (count: number, topicSeed?: string, tagsOverride?: string[]): Pin[] => {
   return Array.from({ length: count }).map((_, i) => {
     const topic = topicSeed || DEFAULT_TOPICS[Math.floor(Math.random() * DEFAULT_TOPICS.length)];
-    // Randomize dimensions to simulate portrait/landscape
     const isLandscape = Math.random() > 0.7;
     const width = 600;
     const height = isLandscape ? Math.floor(Math.random() * 100 + 350) : Math.floor(Math.random() * (900 - 500 + 1)) + 500;
     
     const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const isExclusive = Math.random() > 0.9;
-    const isVideo = Math.random() > 0.85; // 15% chance of being a video
     
-    // Add random tagged products to 30% of pins
+    const rand = Math.random();
+    let type: 'image' | 'video' | 'idea' = 'image';
+    if (rand > 0.85) type = 'video';
+    else if (rand > 0.70) type = 'idea';
+
+    const slides: PinSlide[] = type === 'idea' ? Array.from({ length: 3 }).map((_, si) => ({
+        id: `${id}-slide-${si}`,
+        type: 'image',
+        url: `https://picsum.photos/seed/${id}slide${si}/600/900`
+    })) : [];
+    
     const taggedProducts = Math.random() > 0.7 
         ? [MOCK_PRODUCTS_LIST[Math.floor(Math.random() * MOCK_PRODUCTS_LIST.length)]] 
         : [];
@@ -147,8 +157,9 @@ const generateMockPins = (count: number, topicSeed?: string, tagsOverride?: stri
       title: topic,
       description: `A curated exploration of ${topic.toLowerCase()}. Visual innovation meets timeless design.`,
       imageUrl: `https://picsum.photos/seed/${id}v2/${width}/${height}`,
-      type: isVideo ? 'video' : 'image',
-      videoUrl: isVideo ? 'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/720/Big_Buck_Bunny_720_10s_1MB.mp4' : undefined, // Placeholder video
+      type: type,
+      videoUrl: type === 'video' ? 'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/720/Big_Buck_Bunny_720_10s_1MB.mp4' : undefined,
+      slides: type === 'idea' ? slides : undefined,
       width,
       height,
       tags: tagsOverride || [topic.split(' ')[0], 'inspiration', 'design'],
@@ -156,7 +167,7 @@ const generateMockPins = (count: number, topicSeed?: string, tagsOverride?: stri
       isExclusive: isExclusive,
       taggedProducts: taggedProducts,
       monetization: {
-          adsEnabled: isVideo, // Enable ads if it's a video
+          adsEnabled: type === 'video', 
           isSubscriberOnly: isExclusive
       },
       author: {
@@ -171,7 +182,6 @@ const generateMockPins = (count: number, topicSeed?: string, tagsOverride?: stri
   });
 };
 
-// --- Toast Notification Component ---
 const ToastNotification = ({ show, type, title, message, onDismiss, onAction }: { show: boolean, type: 'message' | 'call', title: string, message: string, onDismiss: () => void, onAction: () => void }) => {
     if (!show) return null;
     return (
@@ -202,6 +212,10 @@ const App: React.FC = () => {
   const [viewState, setViewState] = useState<ViewState>(ViewState.HOME);
   const [historyStack, setHistoryStack] = useState<ViewState[]>([ViewState.HOME]);
   const [historyIndex, setHistoryIndex] = useState(0);
+
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [hasOnboarded, setHasOnboarded] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(true);
 
   const navigateTo = (newState: ViewState) => {
       const newHistory = historyStack.slice(0, historyIndex + 1);
@@ -234,20 +248,16 @@ const App: React.FC = () => {
   const [selectedBoard, setSelectedBoard] = useState<Board | null>(null);
   const [activeCategory, setActiveCategory] = useState("For You");
   
-  // New States for Profile Viewing and Settings
   const [viewingUser, setViewingUser] = useState<User | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isCreateBoardModalOpen, setIsCreateBoardModalOpen] = useState(false);
   
-  // User List Modal State (Followers/Following)
   const [userListModalConfig, setUserListModalConfig] = useState<{isOpen: boolean, title: string, users: User[], initialTab: 'followers'|'following'} | null>(null);
-  
   const [activeStoryIndex, setActiveStoryIndex] = useState<number | null>(null);
-
   const [currentQuery, setCurrentQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   
-  // Advanced Search Filters
   const [searchFilters, setSearchFilters] = useState<{
       type: 'all' | 'image' | 'video',
       orientation: 'any' | 'portrait' | 'landscape' | 'square',
@@ -265,31 +275,42 @@ const App: React.FC = () => {
   const [showStash, setShowStash] = useState(false);
   const [isCanvasMode, setIsCanvasMode] = useState(false);
   const [showCreativeDock, setShowCreativeDock] = useState(false);
-
-  // Notification State
   const [toast, setToast] = useState<{show: boolean, type: 'message' | 'call', title: string, message: string} | null>(null);
 
   const categoryScrollRef = useRef<HTMLDivElement>(null);
   const storiesScrollRef = useRef<HTMLDivElement>(null);
-
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    loadPersonalizedFeed();
-    
-    // Simulate random incoming message for "Powerful Notification"
-    setTimeout(() => {
+    if (isLoggedIn && hasOnboarded) {
+        loadPersonalizedFeed();
+    }
+  }, [isLoggedIn, hasOnboarded]); 
+  
+  const handleLogin = () => {
+      setIsLoggedIn(true);
+      setShowAuthModal(false);
+  };
+  
+  const handleOnboardingComplete = (interests: string[]) => {
+      setHasOnboarded(true);
+      setLoading(true);
+      setTimeout(() => {
+          setHomePins(generateMockPins(30, interests[0]));
+          setStories(generateMockStories());
+          setLoading(false);
+      }, 800);
+      
+      setTimeout(() => {
         setToast({
             show: true,
             type: 'message',
             title: 'Sarah_UX',
             message: 'Hey! Did you see the new moodboard?'
         });
-        // Auto hide after 5s
         setTimeout(() => setToast(null), 5000);
-    }, 5000);
-
-  }, []); 
+      }, 5000);
+  };
 
   const loadPersonalizedFeed = async () => {
       setLoading(true);
@@ -317,29 +338,22 @@ const App: React.FC = () => {
     setCurrentQuery(query);
     setLoading(true);
     setIsSearching(true);
-    // Reset filters on new search
     setSearchFilters({ type: 'all', orientation: 'any', color: null });
     
     setTimeout(() => {
-        setSearchPins(generateMockPins(30, query)); // Generate more to allow filtering
+        setSearchPins(generateMockPins(30, query)); 
         setLoading(false);
         setIsSearching(false);
     }, 800);
   };
 
-  // Re-filter pins when search filters change
   const filteredSearchPins = searchPins.filter(pin => {
-      // Filter by Type
       if (searchFilters.type === 'image' && pin.type !== 'image') return false;
       if (searchFilters.type === 'video' && pin.type !== 'video') return false;
       
-      // Filter by Orientation
       if (searchFilters.orientation === 'portrait' && pin.width >= pin.height) return false;
       if (searchFilters.orientation === 'landscape' && pin.width <= pin.height) return false;
       if (searchFilters.orientation === 'square' && Math.abs(pin.width - pin.height) > 10) return false;
-
-      // Color is handled by simulated regeneration for visual effect, but we can also filter if needed
-      // For this demo, selecting a color regenerates the "search" results to mock finding that color.
       return true;
   });
 
@@ -347,7 +361,6 @@ const App: React.FC = () => {
       const newFilters = { ...searchFilters, [key]: value };
       setSearchFilters(newFilters);
       
-      // If color changes, simulate a fetch for that color specifically
       if (key === 'color' && value) {
           setLoading(true);
           setTimeout(() => {
@@ -398,18 +411,40 @@ const App: React.FC = () => {
       }));
   };
 
-  const handleCreateBoard = () => {
-      const title = prompt("Enter board name:");
-      if (!title) return;
+  const handleCreateBoardTrigger = () => {
+      setIsCreateBoardModalOpen(true);
+  };
+
+  const handleFinalizeCreateBoard = (boardData: { title: string; description: string; isPrivate: boolean; collaborators: string[] }) => {
       const newBoard: Board = {
           id: `b-${Date.now()}`,
-          title,
+          title: boardData.title,
+          description: boardData.description,
           pins: [],
-          isPrivate: false,
-          collaborators: [{...currentUser, role: 'owner'}],
+          isPrivate: boardData.isPrivate,
+          collaborators: [
+              {...currentUser, role: 'owner'},
+              ...boardData.collaborators.map((c, i) => ({
+                  id: `collab-${i}-${Date.now()}`,
+                  username: c.split('@')[0], 
+                  avatarUrl: `https://picsum.photos/seed/${c}/100/100`,
+                  email: c,
+                  followers: 0,
+                  following: 0,
+                  role: 'viewer' as const
+              }))
+          ],
           createdAt: new Date().toISOString()
       };
       setBoards([...boards, newBoard]);
+      setIsCreateBoardModalOpen(false);
+      
+      confetti({
+          particleCount: 150,
+          spread: 80,
+          origin: { y: 0.3 },
+          colors: ['#34d399', '#60a5fa', '#f472b6']
+      });
   };
 
   const handleInviteToBoard = (email: string, role: 'editor' | 'viewer') => {
@@ -455,12 +490,9 @@ const App: React.FC = () => {
 
   const handleCreatePin = (newPin: Pin, boardId?: string) => {
       setHomePins(prev => [newPin, ...prev]);
-      
-      // If a board was selected, add it there too
       if (boardId) {
           handleSavePin(newPin, boardId);
       }
-
       confetti({
           particleCount: 100,
           spread: 70,
@@ -478,12 +510,9 @@ const App: React.FC = () => {
       });
   };
 
-  // User List Handlers
   const openUserList = (type: 'followers' | 'following', user: User) => {
-      // Generate mock data appropriate for the context
-      const count = type === 'followers' ? 15 : 10; // Mock count
+      const count = type === 'followers' ? 15 : 10;
       const users = generateMockUserList(count);
-      
       setUserListModalConfig({
           isOpen: true,
           title: type === 'followers' ? 'Followers' : 'Following',
@@ -536,7 +565,7 @@ const App: React.FC = () => {
                   <Messages 
                     currentUser={currentUser}
                     onClose={goBack}
-                    onViewProfile={handleUserClick} // New Prop
+                    onViewProfile={handleUserClick}
                   />
               );
 
@@ -597,7 +626,7 @@ const App: React.FC = () => {
                     user={currentUser} 
                     boards={boards} 
                     savedPins={[]} 
-                    onCreateBoard={handleCreateBoard}
+                    onCreateBoard={handleCreateBoardTrigger}
                     onOpenBoard={(b) => { setSelectedBoard(b); navigateTo(ViewState.BOARD); }}
                     onShowFollowers={() => openUserList('followers', currentUser)}
                     onShowFollowing={() => openUserList('following', currentUser)}
@@ -609,7 +638,7 @@ const App: React.FC = () => {
               return (
                   <UserProfile 
                     user={viewingUser}
-                    pins={generateMockPins(15)} // Simulate that user's pins
+                    pins={generateMockPins(15)} 
                     onBack={goBack}
                     onPinClick={handlePinClick}
                     onShowFollowers={() => openUserList('followers', viewingUser)}
@@ -641,7 +670,6 @@ const App: React.FC = () => {
                   <>
                     <div className="mb-8 flex flex-col gap-4">
                         <div className="flex items-center gap-4 overflow-x-auto pb-2 scrollbar-hide px-2">
-                             {/* Media Type Filter */}
                              <div className="flex bg-gray-100 p-1 rounded-full flex-shrink-0">
                                  {['all', 'image', 'video'].map(type => (
                                      <button
@@ -656,7 +684,6 @@ const App: React.FC = () => {
 
                              <div className="w-px h-8 bg-gray-200"></div>
 
-                             {/* Orientation Filter */}
                              <div className="flex items-center gap-2 flex-shrink-0">
                                  {['any', 'portrait', 'landscape', 'square'].map(orient => (
                                      <button
@@ -671,7 +698,6 @@ const App: React.FC = () => {
                              
                              <div className="w-px h-8 bg-gray-200"></div>
 
-                             {/* Color Filter */}
                              <div className="flex items-center gap-2 flex-shrink-0">
                                  {COLORS.map(color => (
                                      <button
@@ -807,6 +833,15 @@ const App: React.FC = () => {
 
   return (
     <div className={`min-h-screen text-gray-900 font-sans selection:bg-emerald-200 selection:text-emerald-900 relative transition-colors duration-500 ${isCanvasMode ? 'bg-black text-white' : 'bg-white'}`}>
+      
+      {showAuthModal && !isLoggedIn && (
+          <AuthModal onLogin={handleLogin} onClose={() => handleLogin()} />
+      )}
+
+      {isLoggedIn && !hasOnboarded && (
+          <Onboarding onComplete={handleOnboardingComplete} />
+      )}
+
       <Header 
         onSearch={handleSearch} 
         onVisualSearch={handleVisualSearch}
@@ -822,7 +857,6 @@ const App: React.FC = () => {
         onCreateClick={() => setIsCreateModalOpen(true)}
       />
 
-      {/* Global Toast */}
       {toast && (
           <ToastNotification 
             show={toast.show} 
@@ -840,21 +874,18 @@ const App: React.FC = () => {
       {viewState === ViewState.HOME && (
           <div className="w-full z-40 flex justify-center pointer-events-none mt-2">
              <div className="w-full max-w-[1920px] px-4 relative pointer-events-auto group/nav">
-                
                 <button 
                     onClick={() => scrollCategories('left')}
                     className="absolute left-6 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/80 backdrop-blur-xl rounded-full shadow-2xl border border-white/50 flex items-center justify-center text-gray-800 hover:bg-black hover:text-white transition-all active:scale-95 opacity-0 group-hover/nav:opacity-100"
                 >
                     <ChevronLeft size={24} strokeWidth={2.5} />
                 </button>
-
                 <button 
                     onClick={() => scrollCategories('right')}
                     className="absolute right-6 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/80 backdrop-blur-xl rounded-full shadow-2xl border border-white/50 flex items-center justify-center text-gray-800 hover:bg-black hover:text-white transition-all active:scale-95 opacity-0 group-hover/nav:opacity-100"
                 >
                     <ChevronRight size={24} strokeWidth={2.5} />
                 </button>
-
                 <div 
                     ref={categoryScrollRef}
                     className="flex items-center gap-3 overflow-x-auto [&::-webkit-scrollbar]:hidden px-2 py-3 scroll-smooth mask-linear-fade"
@@ -895,7 +926,6 @@ const App: React.FC = () => {
           >
               <Archive size={20} className="text-emerald-400" /> Stash ({stash.length})
           </div>
-          
           <div className="p-8 h-72 flex flex-col">
              <div className="flex justify-between items-center mb-6">
                  <h3 className="text-2xl font-black text-gray-900 tracking-tight">Idea Stash</h3>
@@ -934,7 +964,6 @@ const App: React.FC = () => {
         onMouseEnter={() => setShowCreativeDock(true)}
         onMouseLeave={() => setShowCreativeDock(false)}
       >
-         
          <div className={`flex flex-col gap-3 items-end transition-all duration-300 ${showCreativeDock ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}>
              <button 
                 className="p-4 bg-white rounded-full shadow-xl text-gray-800 hover:text-emerald-600 transition-all duration-300 flex items-center gap-3 pr-6 hover:scale-105"
@@ -943,7 +972,6 @@ const App: React.FC = () => {
                 <SettingsIcon size={22} />
                 <span className="font-bold">Settings</span>
             </button>
-
             <button 
                 className={`p-4 rounded-full shadow-xl transition-all duration-300 flex items-center gap-3 pr-6 hover:scale-105
                     ${isCanvasMode ? 'bg-black text-emerald-400 ring-2 ring-emerald-500' : 'bg-white text-gray-800'}`}
@@ -952,7 +980,6 @@ const App: React.FC = () => {
                 <Layers size={22} />
                 <span className="font-bold">Canvas Mode</span>
             </button>
-
              <button 
                 className="p-4 bg-white rounded-full shadow-xl text-gray-800 hover:text-purple-600 transition-all duration-300 flex items-center gap-3 pr-6 hover:scale-105"
                 onClick={handleMagicShuffle}
@@ -961,7 +988,6 @@ const App: React.FC = () => {
                 <span className="font-bold">Magic Shuffle</span>
             </button>
          </div>
-
          <button 
             className={`w-16 h-16 rounded-full shadow-2xl flex items-center justify-center transition-all duration-500 hover:scale-110 z-50
                 ${showCreativeDock ? 'bg-black text-white rotate-90' : 'bg-white text-black'}`}
@@ -997,6 +1023,13 @@ const App: React.FC = () => {
             onCreateStory={handleCreateStory}
             user={currentUser}
             boards={boards}
+          />
+      )}
+
+      {isCreateBoardModalOpen && (
+          <CreateBoardModal 
+            onClose={() => setIsCreateBoardModalOpen(false)}
+            onCreate={handleFinalizeCreateBoard}
           />
       )}
 
