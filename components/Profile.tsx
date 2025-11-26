@@ -11,9 +11,10 @@ interface ProfileProps {
     onOpenBoard: (board: Board) => void;
     onShowFollowers: (user: User) => void;
     onShowFollowing: (user: User) => void;
+    onOpenBusinessHub?: () => void;
 }
 
-export const Profile: React.FC<ProfileProps> = ({ user, boards, savedPins, onCreateBoard, onOpenBoard, onShowFollowers, onShowFollowing }) => {
+export const Profile: React.FC<ProfileProps> = ({ user, boards, savedPins, onCreateBoard, onOpenBoard, onShowFollowers, onShowFollowing, onOpenBusinessHub }) => {
     // Default to 'saved' to show where saved items go immediately
     const [activeTab, setActiveTab] = useState<'created' | 'saved'>('saved');
     const [isEditing, setIsEditing] = useState(false);
@@ -99,7 +100,7 @@ export const Profile: React.FC<ProfileProps> = ({ user, boards, savedPins, onCre
                 <h1 className="text-4xl font-extrabold mb-1 text-gray-900 tracking-tight flex items-center gap-2">
                     {user.username}
                 </h1>
-                <p className="text-gray-500 mb-4 font-medium">@stocpro_user</p>
+                <p className="text-gray-500 mb-4 font-medium">@stocpro_user • {user.pronouns || 'he/him'}</p>
                 
                 {/* Bio & Details */}
                 <div className="text-center max-w-lg mb-6">
@@ -139,8 +140,8 @@ export const Profile: React.FC<ProfileProps> = ({ user, boards, savedPins, onCre
                         <>
                              <div className="w-px bg-gray-300 h-5 self-center"></div>
                              <div className="text-center group">
-                                <span className="text-lg text-purple-600">145</span>
-                                <span className="text-gray-500 font-medium ml-1">subscribers</span>
+                                <span className="text-lg text-purple-600">145k</span>
+                                <span className="text-gray-500 font-medium ml-1">monthly views</span>
                              </div>
                         </>
                     )}
@@ -156,8 +157,11 @@ export const Profile: React.FC<ProfileProps> = ({ user, boards, savedPins, onCre
                     <button className="px-6 py-3 bg-gray-100 rounded-full font-bold hover:bg-gray-200 transition flex items-center gap-2">
                         <Share2 size={18}/> Share
                     </button>
-                    {user.isCreator && (
-                        <button className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-full font-bold hover:shadow-lg hover:scale-105 transition flex items-center gap-2">
+                    {user.isCreator && onOpenBusinessHub && (
+                        <button 
+                            onClick={onOpenBusinessHub}
+                            className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-full font-bold hover:shadow-lg hover:scale-105 transition flex items-center gap-2"
+                        >
                             <TrendingUp size={18} /> Business Hub
                         </button>
                     )}

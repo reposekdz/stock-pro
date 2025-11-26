@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { X, Moon, Sun, Bell, Shield, Smartphone, Monitor, Volume2, Wifi, EyeOff, UserCircle, LogOut, ChevronRight, Lock, History, Sliders, AtSign, MessageSquare, Download, CreditCard, HelpCircle } from 'lucide-react';
+import { X, Moon, Bell, Shield, Sliders, AtSign, Globe, Lock, CreditCard, ChevronRight, Download, HelpCircle, Instagram, Youtube, UserCircle, CheckCircle2 } from 'lucide-react';
 import { User } from '../types';
 
 interface SettingsModalProps {
@@ -8,31 +8,40 @@ interface SettingsModalProps {
     user: User;
 }
 
-type SettingsTab = 'profile' | 'account' | 'visibility' | 'tuner' | 'permissions' | 'notifications' | 'security';
+type SettingsTab = 'profile' | 'account' | 'claimed' | 'permissions' | 'notifications' | 'privacy';
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, user }) => {
     const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
     
     // Form State
-    const [displayName, setDisplayName] = useState(user.username);
+    const [firstName, setFirstName] = useState('Design');
+    const [lastName, setLastName] = useState('Pro');
     const [username, setUsername] = useState(user.username.toLowerCase());
     const [about, setAbout] = useState(user.bio || "");
-    const [website, setWebsite] = useState("nexos.app/" + user.username.toLowerCase());
-
+    const [website, setWebsite] = useState(user.website || "");
+    const [pronouns, setPronouns] = useState(user.pronouns || "");
+    
     // Toggles
-    const [isPrivate, setIsPrivate] = useState(false);
-    const [searchEnginePrivacy, setSearchEnginePrivacy] = useState(true);
     const [darkMode, setDarkMode] = useState(false);
-    const [autoplay, setAutoplay] = useState(true);
+    
+    // Permissions
+    const [allowMessages, setAllowMessages] = useState('everyone');
+    const [allowMentions, setAllowMentions] = useState('everyone');
+    
+    // Claimed Accounts Mock
+    const [claimed, setClaimed] = useState({
+        instagram: false,
+        youtube: false,
+        etsy: false
+    });
 
     const MENU_ITEMS: { id: SettingsTab; label: string; icon: any }[] = [
         { id: 'profile', label: 'Public Profile', icon: UserCircle },
         { id: 'account', label: 'Account Management', icon: Sliders },
-        { id: 'visibility', label: 'Profile Visibility', icon: EyeOff },
-        { id: 'tuner', label: 'Home Feed Tuner', icon: History },
+        { id: 'claimed', label: 'Claimed Accounts', icon: CheckCircle2 },
         { id: 'permissions', label: 'Social Permissions', icon: AtSign },
         { id: 'notifications', label: 'Notifications', icon: Bell },
-        { id: 'security', label: 'Security & Logins', icon: Shield },
+        { id: 'privacy', label: 'Privacy & Data', icon: Shield },
     ];
 
     const Toggle = ({ checked, onChange }: { checked: boolean, onChange: (v: boolean) => void }) => (
@@ -43,6 +52,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, user }) =
             <div className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${checked ? 'left-6' : 'left-1'}`}></div>
         </button>
     );
+
+    const handleClaim = (platform: keyof typeof claimed) => {
+        // Simulate OAuth Popup
+        setTimeout(() => {
+            setClaimed(prev => ({ ...prev, [platform]: !prev[platform] }));
+        }, 500);
+    };
 
     const renderContent = () => {
         switch (activeTab) {
@@ -55,29 +71,50 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, user }) =
                         </div>
                         
                         <div className="flex items-center gap-6">
-                            <img src={user.avatarUrl} className="w-24 h-24 rounded-full border-4 border-gray-100" />
+                            <div className="relative">
+                                <img src={user.avatarUrl} className="w-24 h-24 rounded-full border-4 border-gray-100 object-cover" />
+                                <button className="absolute bottom-0 right-0 bg-gray-100 p-1.5 rounded-full border-2 border-white hover:bg-gray-200">
+                                    <Sliders size={14}/>
+                                </button>
+                            </div>
                             <button className="px-6 py-2 bg-gray-100 hover:bg-gray-200 rounded-full font-bold text-sm transition">Change</button>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <label className="text-xs font-bold text-gray-500 uppercase">First Name</label>
-                                <input type="text" className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 ring-black outline-none" value={displayName} onChange={e => setDisplayName(e.target.value)} />
+                                <input type="text" className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 ring-black outline-none" value={firstName} onChange={e => setFirstName(e.target.value)} />
                             </div>
                             <div className="space-y-2">
                                 <label className="text-xs font-bold text-gray-500 uppercase">Last Name</label>
-                                <input type="text" className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 ring-black outline-none" value="Studio" />
+                                <input type="text" className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 ring-black outline-none" value={lastName} onChange={e => setLastName(e.target.value)} />
                             </div>
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-500 uppercase">Short Bio</label>
+                            <label className="text-xs font-bold text-gray-500 uppercase">Pronouns</label>
+                            <select 
+                                className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 ring-black outline-none bg-white"
+                                value={pronouns}
+                                onChange={e => setPronouns(e.target.value)}
+                            >
+                                <option value="">Add pronouns...</option>
+                                <option value="she/her">she/her</option>
+                                <option value="he/him">he/him</option>
+                                <option value="they/them">they/them</option>
+                                <option value="other">Prefer not to say</option>
+                            </select>
+                            <p className="text-xs text-gray-400">Choose how you want to be addressed.</p>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-gray-500 uppercase">About</label>
                             <textarea className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 ring-black outline-none h-24 resize-none" value={about} onChange={e => setAbout(e.target.value)} />
                         </div>
 
                         <div className="space-y-2">
                             <label className="text-xs font-bold text-gray-500 uppercase">Website</label>
-                            <input type="text" className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 ring-black outline-none" value={website} onChange={e => setWebsite(e.target.value)} />
+                            <input type="text" className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 ring-black outline-none" value={website} onChange={e => setWebsite(e.target.value)} placeholder="Add a link to drive traffic to your site" />
                         </div>
 
                         <div className="space-y-2">
@@ -85,6 +122,110 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, user }) =
                             <div className="flex items-center gap-2 p-3 border border-gray-200 rounded-xl bg-gray-50">
                                 <span className="text-gray-500 font-bold">nexos.app/</span>
                                 <input type="text" className="bg-transparent outline-none flex-1 font-bold" value={username} onChange={e => setUsername(e.target.value)} />
+                            </div>
+                        </div>
+                    </div>
+                );
+
+            case 'claimed':
+                return (
+                    <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                        <div>
+                            <h3 className="text-xl font-bold mb-1">Claimed Accounts</h3>
+                            <p className="text-gray-500 text-sm">Monitor analytics and ensure your content gets attributed to you.</p>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between p-4 border border-gray-200 rounded-2xl">
+                                <div className="flex items-center gap-3">
+                                    <Instagram className="text-pink-600" />
+                                    <div>
+                                        <p className="font-bold">Instagram</p>
+                                        <p className="text-xs text-gray-500">Claim your account to get attribution.</p>
+                                    </div>
+                                </div>
+                                <button 
+                                    onClick={() => handleClaim('instagram')}
+                                    className={`px-4 py-2 rounded-full font-bold text-sm transition ${claimed.instagram ? 'bg-black text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-900'}`}
+                                >
+                                    {claimed.instagram ? 'Unclaim' : 'Claim'}
+                                </button>
+                            </div>
+
+                            <div className="flex items-center justify-between p-4 border border-gray-200 rounded-2xl">
+                                <div className="flex items-center gap-3">
+                                    <Youtube className="text-red-600" />
+                                    <div>
+                                        <p className="font-bold">YouTube</p>
+                                        <p className="text-xs text-gray-500">Drive traffic to your channel.</p>
+                                    </div>
+                                </div>
+                                <button 
+                                    onClick={() => handleClaim('youtube')}
+                                    className={`px-4 py-2 rounded-full font-bold text-sm transition ${claimed.youtube ? 'bg-black text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-900'}`}
+                                >
+                                    {claimed.youtube ? 'Unclaim' : 'Claim'}
+                                </button>
+                            </div>
+
+                             <div className="flex items-center justify-between p-4 border border-gray-200 rounded-2xl">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-6 h-6 rounded bg-orange-500 text-white font-serif flex items-center justify-center font-bold text-xs">E</div>
+                                    <div>
+                                        <p className="font-bold">Etsy</p>
+                                        <p className="text-xs text-gray-500">Attribute products to your shop.</p>
+                                    </div>
+                                </div>
+                                <button 
+                                    onClick={() => handleClaim('etsy')}
+                                    className={`px-4 py-2 rounded-full font-bold text-sm transition ${claimed.etsy ? 'bg-black text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-900'}`}
+                                >
+                                    {claimed.etsy ? 'Unclaim' : 'Claim'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+
+            case 'permissions':
+                return (
+                     <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                        <div>
+                            <h3 className="text-xl font-bold mb-1">Social Permissions</h3>
+                            <p className="text-gray-500 text-sm">Control how others interact with you on Nexos.</p>
+                        </div>
+
+                        <div className="space-y-6">
+                            <div>
+                                <h4 className="font-bold text-sm mb-3">@Mentions</h4>
+                                <div className="space-y-2">
+                                    {['Anyone', 'Only people you follow', 'Turn off'].map(opt => (
+                                        <label key={opt} className="flex items-center gap-3 cursor-pointer p-2 hover:bg-gray-50 rounded-lg">
+                                            <input type="radio" name="mentions" className="w-5 h-5 accent-black" defaultChecked={opt === 'Anyone'} />
+                                            <span className="text-sm font-medium">{opt}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div>
+                                <h4 className="font-bold text-sm mb-3">Direct Messages</h4>
+                                <div className="space-y-2">
+                                     {['Anyone', 'Only people you follow', 'No one'].map(opt => (
+                                        <label key={opt} className="flex items-center gap-3 cursor-pointer p-2 hover:bg-gray-50 rounded-lg">
+                                            <input type="radio" name="messages" className="w-5 h-5 accent-black" defaultChecked={opt === 'Anyone'} />
+                                            <span className="text-sm font-medium">{opt}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+
+                             <div>
+                                <div className="flex justify-between items-center mb-1">
+                                    <h4 className="font-bold text-sm">Comments on your Pins</h4>
+                                    <Toggle checked={true} onChange={() => {}} />
+                                </div>
+                                <p className="text-xs text-gray-500">Allow other people to comment on your pins.</p>
                             </div>
                         </div>
                     </div>
@@ -148,41 +289,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, user }) =
                         </div>
                     </div>
                 );
-
-            case 'tuner':
-                return (
-                    <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                        <div>
-                            <h3 className="text-xl font-bold mb-1">Home Feed Tuner</h3>
-                            <p className="text-gray-500 text-sm">Manage your history and topics to tune your home feed.</p>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="bg-black text-white p-4 rounded-2xl cursor-pointer">
-                                <History size={24} className="mb-2"/>
-                                <p className="font-bold">History</p>
-                                <p className="text-xs text-gray-400">Ideas you've viewed</p>
-                            </div>
-                            <div className="bg-gray-100 p-4 rounded-2xl cursor-pointer hover:bg-gray-200">
-                                <Sliders size={24} className="mb-2"/>
-                                <p className="font-bold">Topics</p>
-                                <p className="text-xs text-gray-500">Interests you follow</p>
-                            </div>
-                        </div>
-
-                        <div>
-                            <h4 className="font-bold text-sm mb-4">Recommendations based on activity</h4>
-                            <div className="space-y-1">
-                                {['Minimalist Design', 'Eco Architecture', 'Neon Photography', 'Coffee Stations'].map((topic, i) => (
-                                    <div key={i} className="flex justify-between items-center p-3 hover:bg-gray-50 rounded-xl">
-                                        <p className="font-bold text-sm">{topic}</p>
-                                        <Toggle checked={true} onChange={() => {}} />
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                );
             
             default:
                 return (
@@ -224,7 +330,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, user }) =
                             <HelpCircle size={14} /> Help Center
                         </button>
                         <p className="text-[10px] text-gray-400">
-                            Nexos v3.0.0<br/>
+                            Nexos v3.1.0<br/>
                             © 2025 Nexos Inc.
                         </p>
                     </div>

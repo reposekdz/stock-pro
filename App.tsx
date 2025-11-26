@@ -12,7 +12,7 @@ import { CreateModal } from './components/CreateModal';
 import { CreateBoardModal } from './components/CreateBoardModal';
 import { UserListModal } from './components/UserListModal';
 import { Messages } from './components/Messages';
-import { MonetizationDashboard } from './components/MonetizationDashboard'; 
+import { BusinessHub } from './components/BusinessHub';
 import { AuthModal } from './components/AuthModal';
 import { Onboarding } from './components/Onboarding';
 import { VisualSearchModal } from './components/VisualSearchModal';
@@ -71,6 +71,25 @@ const generateMockBoards = (userId: string): Board[] => [
 
 const generateMockPins = (count: number, topicSeed?: string, preferredType?: 'video' | 'image'): Pin[] => {
   return Array.from({ length: count }).map((_, i) => {
+      // FORCE FIRST PIN TO BE A VIDEO
+      if (i === 0 && !topicSeed) {
+          return {
+              id: 'hero-video-pin',
+              title: 'Cinematic Travel: Tokyo Nights 🇯🇵',
+              description: 'Experience the neon-soaked streets of Shinjuku in 4K. A visual journey through the heart of Japan\'s nightlife. #Tokyo #Travel #Cinematic',
+              imageUrl: 'https://cdn.pixabay.com/photo/2020/01/31/07/20/city-4807469_1280.jpg', // Thumbnail
+              type: 'video',
+              width: 600,
+              height: 1067, // 9:16 aspect
+              tags: ['travel', 'japan', 'cinematic', 'nightlife', '4k'],
+              likes: 12540,
+              author: { ...generateMockUser(), username: 'TravelCinematics', avatarUrl: 'https://picsum.photos/seed/traveler/100/100' },
+              videoUrl: 'https://cdn.pixabay.com/video/2024/02/04/199276-909939886_large.mp4',
+              viewCount: 89000,
+              duration: "0:45"
+          };
+      }
+
       // If preferred type is set, 80% chance to be that type
       const isVideo = preferredType ? (Math.random() > 0.2 ? (preferredType === 'video') : (Math.random() > 0.8)) : (Math.random() > 0.8);
       
@@ -131,6 +150,7 @@ const App: React.FC = () => {
       type: 'followers', 
       userList: [] 
   });
+  const [showBusinessHub, setShowBusinessHub] = useState(false);
 
   // Visual Search State
   const [visualSearchPin, setVisualSearchPin] = useState<Pin | null>(null);
@@ -143,6 +163,28 @@ const App: React.FC = () => {
      setHomePins(generateMockPins(30));
      setStories(generateMockStories(12));
   }, []);
+
+  // Keyboard Navigation for Pins
+  useEffect(() => {
+      const handleKeyDown = (e: KeyboardEvent) => {
+          if (!selectedPin) return;
+          
+          if (e.key === 'ArrowRight') {
+              const currentIndex = homePins.findIndex(p => p.id === selectedPin.id);
+              if (currentIndex < homePins.length - 1) {
+                  setSelectedPin(homePins[currentIndex + 1]);
+              }
+          } else if (e.key === 'ArrowLeft') {
+              const currentIndex = homePins.findIndex(p => p.id === selectedPin.id);
+              if (currentIndex > 0) {
+                  setSelectedPin(homePins[currentIndex - 1]);
+              }
+          }
+      };
+      
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedPin, homePins]);
 
   const navigateTo = (newState: ViewState) => {
       if (!isLoggedIn && (newState === ViewState.PROFILE || newState === ViewState.MESSAGES)) {
@@ -412,7 +454,8 @@ const App: React.FC = () => {
                         onCreateBoard={() => {}} 
                         onOpenBoard={(b) => { setSelectedBoard(b); navigateTo(ViewState.BOARD); }} 
                         onShowFollowers={handleShowFollowers} 
-                        onShowFollowing={handleShowFollowing} 
+                        onShowFollowing={handleShowFollowing}
+                        onOpenBusinessHub={() => setShowBusinessHub(true)} 
                      />;
           case ViewState.BOARD:
               if(!selectedBoard) return <div>404 Board Not Found</div>;
@@ -482,7 +525,7 @@ const App: React.FC = () => {
         <PinDetail 
           pin={selectedPin} 
           onClose={() => setSelectedPin(null)} 
-          relatedPins={generateMockPins(10, selectedPin.title, selectedPin.type === 'video' ? 'video' : 'image')} 
+          relatedPins={generateMockPins(20, selectedPin.title, selectedPin.type === 'video' ? 'video' : 'image')} 
           boards={boards} 
           onTagClick={() => {}} 
           onUserClick={handleUserClick}
@@ -525,6 +568,13 @@ const App: React.FC = () => {
               currentUser={currentUser}
               onClose={() => setUserListConfig({ ...userListConfig, isOpen: false })}
               onToggleFollow={() => {}} // Mock handle follow
+          />
+      )}
+
+      {showBusinessHub && (
+          <BusinessHub 
+              onClose={() => setShowBusinessHub(false)} 
+              recentPins={generateMockPins(5)} 
           />
       )}
 

@@ -9,14 +9,36 @@ export interface User {
   coverUrl?: string;
   isCreator?: boolean;
   location?: string;
+  website?: string;
+  pronouns?: string; // e.g., "he/him"
   links?: { label: string; url: string }[];
+  claimedAccounts?: {
+      instagram?: boolean;
+      youtube?: boolean;
+      etsy?: boolean;
+      website?: boolean;
+  };
+  socialPermissions?: {
+      allowMessages: 'everyone' | 'followers' | 'nobody';
+      allowMentions: 'everyone' | 'followers' | 'nobody';
+      allowComments: boolean;
+  };
   monetizationEligibility?: {
       watchHours: number;
       requiredWatchHours: number;
       eligible: boolean;
   };
-  subscriptionPrice?: number; // Monthly price for exclusive content
+  subscriptionPrice?: number;
   subscriberCount?: number;
+}
+
+export interface BusinessStats {
+    impressions: number;
+    saves: number;
+    outboundClicks: number;
+    engagementRate: number;
+    audienceTotal: number;
+    topPins: Pin[];
 }
 
 export interface Collaborator extends User {
@@ -104,6 +126,15 @@ export interface Pin {
   duration?: string; // e.g. "0:45"
   monetization?: MonetizationSettings;
   viewCount?: number;
+  
+  // Pin Stats (Business)
+  stats?: {
+      impressions: number;
+      saves: number;
+      clicks: number;
+      date: string;
+  };
+  noteToSelf?: string;
 }
 
 export interface Board {

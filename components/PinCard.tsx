@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Share2, MoreHorizontal, ChevronDown, Check, ScanLine, Heart, Play, Layers, Edit2, Download, EyeOff, Flag, Link as LinkIcon, Zap } from 'lucide-react';
+import { Share2, MoreHorizontal, ChevronDown, Check, ScanLine, Heart, Play, Layers, Edit2, Download, EyeOff, Flag, Link as LinkIcon, Zap, Copy, Image as ImageIcon } from 'lucide-react';
 import { Pin, Board, User } from '../types';
 import confetti from 'canvas-confetti';
 
@@ -44,6 +44,8 @@ export const PinCard: React.FC<PinCardProps> = ({
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(pin.likes);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [showContextMenu, setShowContextMenu] = useState(false);
+  const [contextMenuPos, setContextMenuPos] = useState({ x: 0, y: 0 });
   
   // Dominant Color Placeholder
   const [bgColor] = useState(() => {
@@ -73,6 +75,13 @@ export const PinCard: React.FC<PinCardProps> = ({
           }
       }
   }, [isHovered, pin.type, isSelectMode]);
+
+  // Global click listener to close context menu
+  useEffect(() => {
+      const handleClick = () => setShowContextMenu(false);
+      window.addEventListener('click', handleClick);
+      return () => window.removeEventListener('click', handleClick);
+  }, []);
 
   const handleQuickSave = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -169,6 +178,13 @@ export const PinCard: React.FC<PinCardProps> = ({
       setShowMoreMenu(!showMoreMenu);
   };
 
+  // Custom Context Menu (Right Click)
+  const handleContextMenu = (e: React.MouseEvent) => {
+      e.preventDefault();
+      setContextMenuPos({ x: e.clientX, y: e.clientY });
+      setShowContextMenu(true);
+  };
+
   // 3D Tilt Effect & Haptic Feedback
   const handleMouseMove = (e: React.MouseEvent) => {
       if (!cardRef.current || isSelectMode || window.innerWidth < 768) return;
@@ -207,6 +223,7 @@ export const PinCard: React.FC<PinCardProps> = ({
       onMouseLeave={handleMouseLeave}
       onMouseMove={handleMouseMove}
       onClick={handleCardClick}
+      onContextMenu={handleContextMenu}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onTouchMove={handleTouchMove}
@@ -255,8 +272,9 @@ export const PinCard: React.FC<PinCardProps> = ({
               {/* Type Indicators (Visible when not hovered) */}
               <div className={`absolute top-3 left-3 z-20 pointer-events-none transition-opacity duration-200 ${isHovered ? 'opacity-0' : 'opacity-100'}`}>
                   {pin.type === 'video' && (
-                      <div className="w-8 h-8 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center text-white animate-pulse">
-                          <Play size={14} fill="currentColor" />
+                      <div className="bg-black/40 backdrop-blur-md rounded-full px-2 py-1 flex items-center gap-1 text-white text-[10px] font-bold">
+                          <Play size={10} fill="currentColor" />
+                          {pin.duration || '0:15'}
                       </div>
                   )}
                   {(pin.type === 'idea' || (pin.slides && pin.slides.length > 0)) && (
@@ -367,6 +385,29 @@ export const PinCard: React.FC<PinCardProps> = ({
           </div>
       </div>
       
+      {/* Context Menu (Right Click) */}
+      {showContextMenu && (
+          <div 
+            className="fixed z-[9999] bg-white rounded-xl shadow-2xl border border-gray-100 py-1 w-56 animate-in zoom-in-95"
+            style={{ top: contextMenuPos.y, left: contextMenuPos.x }}
+            onClick={(e) => e.stopPropagation()}
+          >
+              <button onClick={handleDownload} className="w-full px-4 py-2.5 text-left text-sm font-bold text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                  <Download size={16} /> Download image
+              </button>
+              <button className="w-full px-4 py-2.5 text-left text-sm font-bold text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                  <Copy size={16} /> Copy image link
+              </button>
+              <button onClick={handleVisualSearchClick} className="w-full px-4 py-2.5 text-left text-sm font-bold text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                  <ScanLine size={16} /> Visual Search
+              </button>
+              <div className="h-px bg-gray-100 my-1"></div>
+              <button className="w-full px-4 py-2.5 text-left text-sm font-bold text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                  <EyeOff size={16} /> Hide this pin
+              </button>
+          </div>
+      )}
+
       {/* Mobile Long Press Menu - Interactive Gradients */}
       {showMobileMenu && (
           <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-md rounded-[16px] flex flex-col items-center justify-center animate-in fade-in duration-200" onClick={(e) => { e.stopPropagation(); setShowMobileMenu(false); }}>
