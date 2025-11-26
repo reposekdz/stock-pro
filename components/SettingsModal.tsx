@@ -17,7 +17,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, user }) =
     const [displayName, setDisplayName] = useState(user.username);
     const [username, setUsername] = useState(user.username.toLowerCase());
     const [about, setAbout] = useState(user.bio || "");
-    const [website, setWebsite] = useState("stocpro.com/" + user.username.toLowerCase());
+    const [website, setWebsite] = useState("nexos.app/" + user.username.toLowerCase());
 
     // Toggles
     const [isPrivate, setIsPrivate] = useState(false);
@@ -83,7 +83,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, user }) =
                         <div className="space-y-2">
                             <label className="text-xs font-bold text-gray-500 uppercase">Username</label>
                             <div className="flex items-center gap-2 p-3 border border-gray-200 rounded-xl bg-gray-50">
-                                <span className="text-gray-500 font-bold">stocpro.com/</span>
+                                <span className="text-gray-500 font-bold">nexos.app/</span>
                                 <input type="text" className="bg-transparent outline-none flex-1 font-bold" value={username} onChange={e => setUsername(e.target.value)} />
                             </div>
                         </div>
@@ -102,7 +102,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, user }) =
                             <div className="flex justify-between items-center py-2">
                                 <div>
                                     <p className="font-bold">Email Address</p>
-                                    <p className="text-sm text-gray-500">{username}@stocpro.net</p>
+                                    <p className="text-sm text-gray-500">{username}@nexos.net</p>
                                 </div>
                                 <button className="px-4 py-2 bg-gray-100 rounded-full font-bold text-xs hover:bg-gray-200">Edit</button>
                             </div>
@@ -224,8 +224,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, user }) =
                             <HelpCircle size={14} /> Help Center
                         </button>
                         <p className="text-[10px] text-gray-400">
-                            Stoc Pro v2.5.0<br/>
-                            © 2025 Stoc Inc.
+                            Nexos v3.0.0<br/>
+                            © 2025 Nexos Inc.
                         </p>
                     </div>
                 </div>

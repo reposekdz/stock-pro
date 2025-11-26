@@ -94,11 +94,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onLogin, onClose }) => {
                     <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/40 via-transparent to-black/50"></div>
                     
                     <div className="relative z-10">
-                         <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center mb-6 shadow-lg shadow-emerald-900/20">
-                            <span className="text-white text-2xl font-black">S</span>
+                         <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mb-6 shadow-xl shadow-emerald-900/30 overflow-hidden">
+                             <svg viewBox="0 0 100 100" className="w-10 h-10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <linearGradient id="nexosGradientAuth" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stopColor="#10b981" />
+                                    <stop offset="100%" stopColor="#0d9488" />
+                                    </linearGradient>
+                                </defs>
+                                <path d="M25 75V25C25 22.2386 27.2386 20 30 20H35L65 80H70C72.7614 80 75 77.7614 75 75V25" stroke="url(#nexosGradientAuth)" strokeWidth="10" strokeLinecap="round" strokeLinejoin="round"/>
+                                <circle cx="25" cy="50" r="4" fill="white" stroke="url(#nexosGradientAuth)" strokeWidth="3"/>
+                                <circle cx="50" cy="50" r="4" fill="white" stroke="url(#nexosGradientAuth)" strokeWidth="3"/>
+                                <circle cx="75" cy="50" r="4" fill="white" stroke="url(#nexosGradientAuth)" strokeWidth="3"/>
+                             </svg>
                          </div>
-                         <h1 className="text-4xl font-black tracking-tight mb-2">Welcome to Stoc Pro.</h1>
-                         <p className="text-gray-300 font-medium">The world's most advanced visual discovery engine.</p>
+                         <h1 className="text-4xl font-black tracking-tight mb-2">Welcome to Nexos.</h1>
+                         <p className="text-gray-300 font-medium">The connected visual discovery engine.</p>
                     </div>
 
                     <div className="relative z-10 space-y-4">
@@ -107,7 +118,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onLogin, onClose }) => {
                             <span>Used by 2M+ Creators</span>
                         </div>
                         <p className="text-sm text-gray-400 leading-relaxed">
-                            "Stoc Pro has completely revolutionized how I find and organize inspiration. The AI features are mind-blowing!"
+                            "Nexos has completely revolutionized how I find and organize inspiration. The connections it builds are mind-blowing!"
                         </p>
                         <div className="flex items-center gap-3">
                             <img src="https://picsum.photos/seed/u1/50/50" className="w-8 h-8 rounded-full border border-white/30"/>

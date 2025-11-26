@@ -45,7 +45,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   useEffect(() => {
     // Load history from local storage (mock)
-    const stored = localStorage.getItem('stoc_search_history');
+    const stored = localStorage.getItem('nexos_search_history');
     if (stored) setSearchHistory(JSON.parse(stored));
     else setSearchHistory(['Modern Art', 'Interior Design', 'Cyberpunk City', 'Minimalist UI']);
   }, []);
@@ -61,7 +61,7 @@ export const Header: React.FC<HeaderProps> = ({
       // Update history
       const newHistory = [query, ...searchHistory.filter(h => h !== query)].slice(0, 5);
       setSearchHistory(newHistory);
-      localStorage.setItem('stoc_search_history', JSON.stringify(newHistory));
+      localStorage.setItem('nexos_search_history', JSON.stringify(newHistory));
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -80,7 +80,20 @@ export const Header: React.FC<HeaderProps> = ({
         
         {/* Left Side: Logo & Nav */}
         <div className={`flex items-center gap-4 pl-1 ${isMobileSearchOpen ? 'hidden md:flex' : 'flex'}`}>
-           <button onClick={onHomeClick} className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center text-white font-black text-2xl hover:scale-105 transition shadow-lg shadow-emerald-200">S</button>
+           <button onClick={onHomeClick} className="w-12 h-12 rounded-2xl flex items-center justify-center hover:scale-105 transition shadow-lg shadow-emerald-200/50 bg-white border border-emerald-100 overflow-hidden group">
+               <svg viewBox="0 0 100 100" className="w-8 h-8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <linearGradient id="nexosGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#10b981" />
+                      <stop offset="100%" stopColor="#0d9488" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M25 75V25C25 22.2386 27.2386 20 30 20H35L65 80H70C72.7614 80 75 77.7614 75 75V25" stroke="url(#nexosGradient)" strokeWidth="10" strokeLinecap="round" strokeLinejoin="round"/>
+                  <circle cx="25" cy="50" r="4" fill="white" stroke="url(#nexosGradient)" strokeWidth="3"/>
+                  <circle cx="50" cy="50" r="4" fill="white" stroke="url(#nexosGradient)" strokeWidth="3"/>
+                  <circle cx="75" cy="50" r="4" fill="white" stroke="url(#nexosGradient)" strokeWidth="3"/>
+               </svg>
+           </button>
            <div className="hidden md:flex gap-2">
                <button onClick={onBack} disabled={!canGoBack} className="p-2.5 rounded-full bg-gray-100 disabled:opacity-50 hover:bg-gray-200 transition"><ArrowLeft size={18}/></button>
                <button onClick={onForward} disabled={!canGoForward} className="p-2.5 rounded-full bg-gray-100 disabled:opacity-50 hover:bg-gray-200 transition"><ArrowRight size={18}/></button>
