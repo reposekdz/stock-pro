@@ -50,6 +50,7 @@ export const CreateModal: React.FC<CreateModalProps> = ({ onClose, onCreatePin, 
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [fileType, setFileType] = useState<'image' | 'video' | null>(null);
   const [fileSize, setFileSize] = useState<string>('');
+  const [isDragging, setIsDragging] = useState(false);
   
   // Metadata State
   const [title, setTitle] = useState('');
@@ -80,6 +81,33 @@ export const CreateModal: React.FC<CreateModalProps> = ({ onClose, onCreatePin, 
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  const handleDragEnter = (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(true);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
+      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+          handleFile(e.dataTransfer.files[0]);
+      }
+  };
 
   const handleFile = (file: File) => {
       // Simulate reading file metadata
@@ -272,14 +300,18 @@ export const CreateModal: React.FC<CreateModalProps> = ({ onClose, onCreatePin, 
                 <div className="w-full md:w-[50%] bg-gray-100 relative flex flex-col items-center justify-center p-8 overflow-hidden">
                     {!previewUrl ? (
                         <div 
-                            className="w-full h-full border-4 border-dashed border-gray-300 rounded-3xl flex flex-col items-center justify-center cursor-pointer hover:border-emerald-400 hover:bg-emerald-50 transition-all group"
+                            className={`w-full h-full border-4 border-dashed rounded-3xl flex flex-col items-center justify-center cursor-pointer transition-all group ${isDragging ? 'border-emerald-500 bg-emerald-50 scale-[0.98]' : 'border-gray-300 hover:border-emerald-400 hover:bg-emerald-50'}`}
                             onClick={() => fileInputRef.current?.click()}
+                            onDragEnter={handleDragEnter}
+                            onDragLeave={handleDragLeave}
+                            onDragOver={handleDragOver}
+                            onDrop={handleDrop}
                         >
-                            <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg mb-6 group-hover:scale-110 transition-transform">
-                                <Upload size={32} className="text-emerald-500" />
+                            <div className={`w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg mb-6 transition-transform ${isDragging ? 'scale-125' : 'group-hover:scale-110'}`}>
+                                <Upload size={32} className={`transition-colors ${isDragging ? 'text-emerald-600' : 'text-emerald-500'}`} />
                             </div>
                             <h3 className="text-xl font-bold text-gray-900 mb-2">Drag and drop or click to upload</h3>
-                            <p className="text-gray-500 mb-6">High-quality images or videos (up to 2GB)</p>
+                            <p className="text-gray-500 mb-6 text-center max-w-xs">High-quality JPG, PNG, GIF or MP4 (up to 2GB)</p>
                             <input type="file" ref={fileInputRef} className="hidden" onChange={(e) => e.target.files && handleFile(e.target.files[0])} accept="image/*,video/*" />
                         </div>
                     ) : (

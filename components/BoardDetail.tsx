@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ArrowLeft, MoreHorizontal, Plus, Share2, UserPlus, Shield, Eye, Edit3, Check, Clock, Globe, Lock, Search, X, Grid, List, FolderPlus, Trash2, GripVertical, Settings } from 'lucide-react';
+import { ArrowLeft, MoreHorizontal, Plus, Share2, UserPlus, Shield, Eye, Edit3, Check, Clock, Globe, Lock, Search, X, Grid, List, FolderPlus, Trash2, GripVertical, Settings, Play, Filter, Sparkles, BarChart2, Lightbulb } from 'lucide-react';
 import { Board, Pin, User, Collaborator } from '../types';
 import { PinCard } from './PinCard';
 
@@ -31,6 +31,8 @@ export const BoardDetail: React.FC<BoardDetailProps> = ({
     const [showEditModal, setShowEditModal] = useState(false);
     const [isOrganizing, setIsOrganizing] = useState(false);
     const [selectedPins, setSelectedPins] = useState<string[]>([]);
+    const [showMoreIdeas, setShowMoreIdeas] = useState(false);
+    const [activeFilter, setActiveFilter] = useState<'all' | 'video' | 'notes'>('all');
     
     // Edit State
     const [editTitle, setEditTitle] = useState(board.title);
@@ -62,15 +64,23 @@ export const BoardDetail: React.FC<BoardDetailProps> = ({
 
             {/* Hero Header */}
             <div className="flex flex-col items-center text-center max-w-4xl mx-auto mb-12">
-                <h1 className="text-5xl md:text-6xl font-black mb-4 tracking-tight text-gray-900 leading-tight">
+                <h1 className="text-5xl md:text-7xl font-black mb-4 tracking-tighter text-gray-900 leading-tight">
                     {board.title}
                 </h1>
                 
+                {board.description && (
+                    <p className="text-gray-600 text-lg max-w-2xl mb-6 font-medium">{board.description}</p>
+                )}
+                
                 <div className="flex items-center gap-4 text-sm font-bold text-gray-500 mb-8">
-                     <span className="flex items-center gap-1.5">
-                         {board.isPrivate ? <Lock size={14} /> : <Globe size={14} />}
-                         {board.isPrivate ? 'Secret Board' : 'Public Board'}
-                     </span>
+                     <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">
+                         {board.isPrivate ? <Lock size={12} /> : <Globe size={12} />}
+                         {board.isPrivate ? 'Secret' : 'Public'}
+                     </div>
+                     <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">
+                         <BarChart2 size={12} />
+                         <span>1.2k Views/mo</span>
+                     </div>
                      <span>•</span>
                      <span>{pins.length} Pins</span>
                 </div>
@@ -78,44 +88,50 @@ export const BoardDetail: React.FC<BoardDetailProps> = ({
                 <div className="flex items-center gap-2 mb-8">
                     <div className="flex -space-x-3">
                         {board.collaborators.map((c, i) => (
-                            <img key={i} src={c.avatarUrl} className="w-10 h-10 rounded-full border-2 border-white" title={c.username} />
+                            <img key={i} src={c.avatarUrl} className="w-12 h-12 rounded-full border-4 border-white shadow-sm" title={c.username} />
                         ))}
                     </div>
                     <button 
                         onClick={() => setShowInviteModal(true)}
-                        className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition"
+                        className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition border-4 border-white shadow-sm"
                     >
-                        <UserPlus size={18} />
+                        <UserPlus size={20} />
                     </button>
                 </div>
 
                 {/* Toolbar */}
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3 flex-wrap justify-center">
                      {isOrganizing ? (
                          <div className="flex gap-2 animate-in fade-in slide-in-from-top-2">
-                             <button className="px-6 py-2 bg-gray-900 text-white rounded-full font-bold text-sm">
+                             <button className="px-6 py-2.5 bg-gray-900 text-white rounded-full font-bold text-sm">
                                  Move ({selectedPins.length})
                              </button>
-                             <button className="px-6 py-2 bg-red-50 text-red-600 rounded-full font-bold text-sm hover:bg-red-100">
+                             <button className="px-6 py-2.5 bg-red-50 text-red-600 rounded-full font-bold text-sm hover:bg-red-100">
                                  Delete ({selectedPins.length})
                              </button>
                              <button 
                                 onClick={() => { setIsOrganizing(false); setSelectedPins([]); }}
-                                className="px-6 py-2 bg-gray-200 text-gray-900 rounded-full font-bold text-sm hover:bg-gray-300"
+                                className="px-6 py-2.5 bg-gray-200 text-gray-900 rounded-full font-bold text-sm hover:bg-gray-300"
                              >
                                  Done
                              </button>
                          </div>
                      ) : (
-                         <div className="flex gap-2">
+                         <>
                              <button 
                                 onClick={() => setIsOrganizing(true)}
                                 className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 rounded-full font-bold text-sm transition flex items-center gap-2"
                              >
                                 <Grid size={16} /> Organize
                              </button>
+                             <button 
+                                onClick={() => setShowMoreIdeas(!showMoreIdeas)}
+                                className={`px-5 py-2.5 rounded-full font-bold text-sm transition flex items-center gap-2 ${showMoreIdeas ? 'bg-black text-white' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'}`}
+                             >
+                                <Lightbulb size={16} /> More Ideas
+                             </button>
                              <button className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 rounded-full font-bold text-sm transition flex items-center gap-2">
-                                <FolderPlus size={16} /> Add Section
+                                <Play size={16} /> Slideshow
                              </button>
                              <button 
                                 onClick={() => setShowEditModal(true)}
@@ -123,10 +139,37 @@ export const BoardDetail: React.FC<BoardDetailProps> = ({
                              >
                                 <Edit3 size={18} />
                              </button>
-                         </div>
+                         </>
                      )}
                 </div>
+
+                {/* Filters */}
+                <div className="flex gap-2 mt-6">
+                    {['All', 'Video', 'Notes'].map(f => (
+                        <button 
+                            key={f} 
+                            onClick={() => setActiveFilter(f.toLowerCase() as any)}
+                            className={`px-4 py-1.5 rounded-full text-xs font-bold transition ${activeFilter === f.toLowerCase() ? 'bg-black text-white' : 'bg-white border border-gray-200 text-gray-500 hover:bg-gray-50'}`}
+                        >
+                            {f}
+                        </button>
+                    ))}
+                </div>
             </div>
+
+            {/* More Ideas Section */}
+            {showMoreIdeas && (
+                <div className="mb-12 bg-gray-50 p-6 rounded-3xl border border-gray-100 animate-in slide-in-from-top-4">
+                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                        <Sparkles size={18} className="text-purple-500"/> Recommended for this board
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                        {[1,2,3,4,5,6].map(i => (
+                             <div key={i} className="aspect-[2/3] bg-gray-200 rounded-xl animate-pulse"></div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* Pins Grid */}
             <div className="masonry-grid">

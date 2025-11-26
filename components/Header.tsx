@@ -70,6 +70,10 @@ export const Header: React.FC<HeaderProps> = ({
     }
   };
 
+  const handleGuestInteraction = () => {
+      if(!isLoggedIn) onLoginClick();
+  };
+
   return (
     <header className="w-full px-4 pt-4 pb-2 z-[100] relative">
       <div className={`max-w-[1920px] mx-auto bg-white/80 backdrop-blur-2xl rounded-full px-3 py-3 shadow-[0_8px_32px_rgba(0,0,0,0.08)] border border-white/50 flex items-center justify-between gap-4 relative transition-all duration-300 ${zenMode ? 'opacity-20 hover:opacity-100' : 'opacity-100'}`}>
@@ -153,11 +157,26 @@ export const Header: React.FC<HeaderProps> = ({
                 <Eye size={22} />
             </button>
 
+            {/* Always show Message & Notification icons (interactive) */}
+            <button 
+                onClick={isLoggedIn ? () => {/* notifications */} : handleGuestInteraction} 
+                className="p-3 bg-gray-100 rounded-full hover:bg-gray-200 transition text-gray-700 relative group"
+                title="Notifications"
+            >
+                <Bell size={22} className="group-hover:text-emerald-600 transition-colors"/>
+                {isLoggedIn && <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>}
+            </button>
+            <button 
+                onClick={isLoggedIn ? onMessagesClick : handleGuestInteraction} 
+                className="p-3 bg-gray-100 rounded-full hover:bg-gray-200 transition text-gray-700 relative group"
+                title="Messages"
+            >
+                <MessageCircle size={22} className="group-hover:text-emerald-600 transition-colors"/>
+                {isLoggedIn && <span className="absolute top-2 right-2.5 w-2 h-2 bg-emerald-500 rounded-full ring-2 ring-white"></span>}
+            </button>
+
             {isLoggedIn ? (
                 <>
-                    <button onClick={onMessagesClick} className="p-3 bg-gray-100 rounded-full hover:bg-gray-200 transition text-gray-700 relative group">
-                        <MessageCircle size={22} className="group-hover:text-emerald-600 transition-colors"/>
-                    </button>
                     <button onClick={onCreateClick} className="hidden md:flex p-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-full hover:shadow-lg hover:scale-105 transition shadow-emerald-200 items-center gap-2 px-6">
                         <Plus size={20}/> <span className="font-bold">Create</span>
                     </button>

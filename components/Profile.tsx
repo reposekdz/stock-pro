@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from 'react';
-import { Plus, Settings, Share2, Camera, MapPin, Link as LinkIcon, Edit3, X, Globe, Instagram, Twitter, Crown, TrendingUp, Check } from 'lucide-react';
+import { Plus, Settings, Share2, Camera, MapPin, Link as LinkIcon, Edit3, X, Globe, Instagram, Twitter, Crown, TrendingUp, Check, Lock, Edit2 } from 'lucide-react';
 import { User, Board, Pin } from '../types';
 
 interface ProfileProps {
@@ -9,8 +9,8 @@ interface ProfileProps {
     savedPins: Pin[]; 
     onCreateBoard: () => void;
     onOpenBoard: (board: Board) => void;
-    onShowFollowers: () => void;
-    onShowFollowing: () => void;
+    onShowFollowers: (user: User) => void;
+    onShowFollowing: (user: User) => void;
 }
 
 export const Profile: React.FC<ProfileProps> = ({ user, boards, savedPins, onCreateBoard, onOpenBoard, onShowFollowers, onShowFollowing }) => {
@@ -121,7 +121,7 @@ export const Profile: React.FC<ProfileProps> = ({ user, boards, savedPins, onCre
 
                 <div className="flex gap-6 text-sm font-bold text-gray-900 mb-8 items-center bg-gray-50 px-6 py-3 rounded-full border border-gray-100">
                     <button 
-                        onClick={onShowFollowers}
+                        onClick={() => onShowFollowers(user)}
                         className="text-center cursor-pointer hover:text-emerald-600 transition group"
                     >
                         <span className="text-lg">{user.followers.toLocaleString()}</span>
@@ -129,7 +129,7 @@ export const Profile: React.FC<ProfileProps> = ({ user, boards, savedPins, onCre
                     </button>
                     <div className="w-px bg-gray-300 h-5 self-center"></div>
                     <button 
-                        onClick={onShowFollowing}
+                        onClick={() => onShowFollowing(user)}
                         className="text-center cursor-pointer hover:text-emerald-600 transition group"
                     >
                         <span className="text-lg">{user.following.toLocaleString()}</span>
@@ -259,11 +259,11 @@ export const Profile: React.FC<ProfileProps> = ({ user, boards, savedPins, onCre
             </div>
 
             {/* Board Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full px-4 max-w-[1600px]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10 w-full px-4 max-w-[1600px]">
                 {/* Create Board Card */}
                 <div 
                     onClick={onCreateBoard}
-                    className="aspect-[4/5] bg-gray-50 border-2 border-dashed border-gray-200 rounded-3xl flex flex-col items-center justify-center cursor-pointer hover:bg-emerald-50 hover:border-emerald-200 transition group"
+                    className="aspect-[4/3] sm:aspect-[4/3] bg-gray-50 border-2 border-dashed border-gray-200 rounded-[20px] flex flex-col items-center justify-center cursor-pointer hover:bg-emerald-50 hover:border-emerald-200 transition group"
                 >
                     <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center text-gray-400 group-hover:text-emerald-500 shadow-sm mb-4 transition-colors">
                         <Plus size={32} />
@@ -283,40 +283,45 @@ export const Profile: React.FC<ProfileProps> = ({ user, boards, savedPins, onCre
                 {activeTab === 'saved' && boards.map(board => (
                     <div 
                         key={board.id} 
-                        className="cursor-pointer group relative"
+                        className="cursor-pointer group relative flex flex-col"
                         onClick={() => onOpenBoard(board)}
                     >
-                        <div className="aspect-[4/5] rounded-3xl overflow-hidden bg-gray-100 relative mb-3 grid grid-cols-2 grid-rows-2 gap-0.5 group-hover:shadow-xl transition-all duration-300">
-                            {/* Collaborators */}
-                            {board.collaborators.length > 1 && (
-                                <div className="absolute top-3 left-3 z-10 bg-white/90 backdrop-blur p-1 rounded-full shadow-sm">
-                                    <div className="flex -space-x-2">
-                                        {board.collaborators.slice(0,3).map((c, i) => (
-                                            <img key={i} src={c.avatarUrl} className="w-6 h-6 rounded-full border border-white" />
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
+                        {/* Board Cover Collage - Pinterest Exact Match */}
+                        <div className="aspect-[4/3] rounded-[20px] overflow-hidden grid grid-cols-3 gap-0.5 relative mb-3">
+                             {/* Large Main Image - Left (spans 2 cols) */}
+                             <div className="col-span-2 h-full bg-gray-200 relative overflow-hidden group-hover:opacity-90 transition">
+                                 <img src={`https://picsum.photos/seed/${board.id}main/500/500`} className="w-full h-full object-cover" />
+                             </div>
+                             
+                             {/* Right Column Stack */}
+                             <div className="col-span-1 grid grid-rows-2 gap-0.5 h-full">
+                                 <div className="bg-gray-200 overflow-hidden group-hover:opacity-90 transition">
+                                     <img src={`https://picsum.photos/seed/${board.id}top/300/300`} className="w-full h-full object-cover" />
+                                 </div>
+                                 <div className="bg-gray-200 overflow-hidden group-hover:opacity-90 transition">
+                                     <img src={`https://picsum.photos/seed/${board.id}btm/300/300`} className="w-full h-full object-cover" />
+                                 </div>
+                             </div>
 
-                            {/* Images - Mocked for specific slots */}
-                            <div className="col-span-1 row-span-2 bg-gray-200 group-hover:opacity-90 transition">
-                                <img src={`https://picsum.photos/seed/${board.id}1/300/600`} className="w-full h-full object-cover" />
-                            </div>
-                            <div className="col-span-1 bg-gray-200 group-hover:opacity-90 transition">
-                                <img src={`https://picsum.photos/seed/${board.id}2/300/300`} className="w-full h-full object-cover" />
-                            </div>
-                            <div className="col-span-1 bg-gray-200 group-hover:opacity-90 transition">
-                                <img src={`https://picsum.photos/seed/${board.id}3/300/300`} className="w-full h-full object-cover" />
-                            </div>
-                            
-                            {/* Hover Overlay */}
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
+                             {/* Hover Overlay */}
+                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors pointer-events-none"></div>
+                             
+                             {/* Edit Button for Owner */}
+                             <button className="absolute bottom-3 right-3 p-2 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-all hover:bg-gray-100" onClick={(e) => {e.stopPropagation(); /* edit board */}}>
+                                 <Edit2 size={16} />
+                             </button>
                         </div>
-                        <h3 className="font-bold text-xl leading-tight text-gray-900 group-hover:text-emerald-700 transition-colors">{board.title}</h3>
+
+                        <h3 className="font-bold text-xl leading-tight text-gray-900 line-clamp-1">{board.title}</h3>
                         <div className="flex items-center gap-2 text-xs text-gray-500 font-medium mt-1">
                             <span>{board.pins.length} Pins</span>
-                            <span>•</span>
-                            <span className="text-emerald-600">{board.collaborators.length > 1 ? 'Shared' : 'Private'}</span>
+                            <span className="text-gray-300">•</span>
+                            <span className="flex items-center gap-1">
+                                {board.isPrivate ? <Lock size={10} /> : <Globe size={10} />} 
+                                {board.collaborators.length > 1 ? 'Shared' : (board.isPrivate ? 'Secret' : 'Public')}
+                            </span>
+                            <span className="text-gray-300">•</span>
+                            <span className="text-gray-400">Updated 2d</span>
                         </div>
                     </div>
                 ))}

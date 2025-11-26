@@ -37,6 +37,18 @@ const generateMockUser = (): User => ({
     isCreator: true
 });
 
+const generateMockUsersList = (count: number): User[] => {
+    return Array.from({ length: count }).map((_, i) => ({
+        id: `u-${i}`,
+        username: `User_${i + 1}`,
+        avatarUrl: `https://picsum.photos/seed/u${i}/100/100`,
+        followers: Math.floor(Math.random() * 5000),
+        following: Math.floor(Math.random() * 500),
+        bio: Math.random() > 0.5 ? 'Digital Artist & Creator' : 'Lifestyle Blogger',
+        isCreator: Math.random() > 0.7
+    }));
+};
+
 const generateMockBoards = (userId: string): Board[] => [
     {
         id: 'b1',
@@ -107,6 +119,13 @@ const App: React.FC = () => {
   const [isOrganizing, setIsOrganizing] = useState(false);
   const [selectedPinIds, setSelectedPinIds] = useState<Set<string>>(new Set());
 
+  // User List Modal State
+  const [userListConfig, setUserListConfig] = useState<{isOpen: boolean, type: 'followers' | 'following', user?: User, userList: User[]}>({ 
+      isOpen: false, 
+      type: 'followers', 
+      userList: [] 
+  });
+
   // Scroll Refs for Custom Navigation
   const storiesRef = useRef<HTMLDivElement>(null);
   const topicsRef = useRef<HTMLDivElement>(null);
@@ -150,6 +169,24 @@ const App: React.FC = () => {
           return;
       }
       setIsCreateModalOpen(true);
+  };
+
+  const handleShowFollowers = (u: User) => {
+      setUserListConfig({
+          isOpen: true,
+          type: 'followers',
+          user: u,
+          userList: generateMockUsersList(15)
+      });
+  };
+
+  const handleShowFollowing = (u: User) => {
+      setUserListConfig({
+          isOpen: true,
+          type: 'following',
+          user: u,
+          userList: generateMockUsersList(8)
+      });
   };
 
   const togglePinSelection = (pinId: string) => {
@@ -348,12 +385,30 @@ const App: React.FC = () => {
                   </div>
               );
           case ViewState.PROFILE:
-              return <Profile user={currentUser} boards={boards} savedPins={[]} onCreateBoard={() => {}} onOpenBoard={(b) => { setSelectedBoard(b); navigateTo(ViewState.BOARD); }} onShowFollowers={() => {}} onShowFollowing={() => {}} />;
+              return <Profile 
+                        user={currentUser} 
+                        boards={boards} 
+                        savedPins={[]} 
+                        onCreateBoard={() => {}} 
+                        onOpenBoard={(b) => { setSelectedBoard(b); navigateTo(ViewState.BOARD); }} 
+                        onShowFollowers={handleShowFollowers} 
+                        onShowFollowing={handleShowFollowing} 
+                     />;
           case ViewState.BOARD:
               if(!selectedBoard) return <div>404 Board Not Found</div>;
               return <BoardDetail board={selectedBoard} pins={[]} allBoards={boards} onBack={goBack} onPinClick={() => {}} onInvite={() => {}} onMoreLikeThis={() => {}} onStash={() => {}} onTagClick={() => {}} />;
           case ViewState.MESSAGES:
               return <Messages currentUser={currentUser} onClose={() => navigateTo(ViewState.HOME)} onViewProfile={() => {}} />;
+          case ViewState.USER_PROFILE:
+             // Mock user for UserProfile view if we had navigation to it, passing handleShowFollowers
+             return <UserProfile 
+                 user={currentUser} 
+                 pins={[]} 
+                 onBack={goBack} 
+                 onPinClick={() => {}} 
+                 onShowFollowers={handleShowFollowers} 
+                 onShowFollowing={handleShowFollowing} 
+             />;
           default:
               return (
                   <div className="flex flex-col items-center justify-center h-[60vh] text-center">
@@ -428,6 +483,17 @@ const App: React.FC = () => {
             onCreateStory={(story) => setStories([story, ...stories])} 
             user={currentUser} 
             boards={boards} 
+          />
+      )}
+
+      {userListConfig.isOpen && (
+          <UserListModal 
+              title={userListConfig.type === 'followers' ? 'Followers' : 'Following'}
+              initialTab={userListConfig.type}
+              users={userListConfig.userList}
+              currentUser={currentUser}
+              onClose={() => setUserListConfig({ ...userListConfig, isOpen: false })}
+              onToggleFollow={() => {}} // Mock handle follow
           />
       )}
 

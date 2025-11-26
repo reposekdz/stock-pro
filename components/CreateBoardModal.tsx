@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { X, Lock, Globe, Users, Sparkles, AlignLeft, Check } from 'lucide-react';
+import { X, Lock, Globe, Users, Sparkles, AlignLeft, Check, Image as ImageIcon } from 'lucide-react';
 
 interface CreateBoardModalProps {
     onClose: () => void;
@@ -52,13 +52,28 @@ export const CreateBoardModal: React.FC<CreateBoardModalProps> = ({ onClose, onC
                         />
                     </div>
 
+                    {/* Mock Cover Image Selection - Innovation */}
+                    <div className="space-y-2">
+                        <label className="text-xs font-bold text-gray-500 uppercase ml-1">Board Cover (Optional)</label>
+                        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                            <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center border-2 border-dashed border-gray-300 cursor-pointer hover:bg-emerald-50 hover:border-emerald-300 transition shrink-0">
+                                <ImageIcon size={20} className="text-gray-400" />
+                            </div>
+                            {[1,2,3,4].map(i => (
+                                <div key={i} className="w-16 h-16 rounded-xl bg-gray-100 overflow-hidden shrink-0 cursor-pointer border-2 border-transparent hover:border-emerald-500 transition">
+                                    <img src={`https://picsum.photos/seed/boardcover${i}/100/100`} className="w-full h-full object-cover" />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
                     <div className="space-y-2">
                         <label className="text-xs font-bold text-gray-500 uppercase ml-1">Description</label>
                         <div className="relative">
                             <AlignLeft className="absolute left-4 top-4 text-gray-400" size={18} />
                             <textarea 
                                 placeholder="What's this board about?" 
-                                className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-12 pr-4 py-4 font-medium outline-none focus:ring-2 ring-emerald-500 transition resize-none h-32"
+                                className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-12 pr-4 py-4 font-medium outline-none focus:ring-2 ring-emerald-500 transition resize-none h-24"
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
                             />
