@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Share2, MoreHorizontal, ChevronDown, Check, ScanSearch, Heart, RotateCcw, Play, Layers, Edit2, Circle, Download, Zap, EyeOff, Flag, Link as LinkIcon, AlertTriangle } from 'lucide-react';
+import { Share2, MoreHorizontal, ChevronDown, Check, ScanLine, Heart, Play, Layers, Edit2, Download, EyeOff, Flag, Link as LinkIcon, Zap } from 'lucide-react';
 import { Pin, Board, User } from '../types';
 import confetti from 'canvas-confetti';
 
@@ -11,12 +11,13 @@ interface PinCardProps {
   onMoreLikeThis: (pin: Pin) => void;
   onStash: (pin: Pin) => void;
   onTagClick: (tag: string) => void;
-  onUserClick?: (user: User) => void; 
+  onUserClick?: (user: User) => void;
   boards: Board[];
   isSelectMode?: boolean;
   isSelected?: boolean;
   onSelect?: (pinId: string) => void;
   isCreator?: boolean;
+  onVisualSearch?: (pin: Pin) => void; // New Prop
 }
 
 export const PinCard: React.FC<PinCardProps> = ({ 
@@ -31,7 +32,8 @@ export const PinCard: React.FC<PinCardProps> = ({
     isSelectMode = false,
     isSelected = false,
     onSelect,
-    isCreator = false
+    isCreator = false,
+    onVisualSearch
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
@@ -119,9 +121,13 @@ export const PinCard: React.FC<PinCardProps> = ({
               url: window.location.href // Mock URL
           });
       } else {
-          // Fallback or just a visual feedback
           alert('Link copied to clipboard!');
       }
+  };
+
+  const handleVisualSearchClick = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (onVisualSearch) onVisualSearch(pin);
   };
 
   const handleTouchStart = () => {
@@ -299,13 +305,13 @@ export const PinCard: React.FC<PinCardProps> = ({
                       <div className="flex justify-end items-end relative z-20">
                           {/* Utilities - Bottom Right */}
                           <div className="flex gap-2">
-                              {/* Scan Lens Button */}
+                              {/* Visual Search Button (Lens Icon) */}
                               <button 
                                   className="p-2.5 bg-white/90 backdrop-blur-sm rounded-full text-black hover:bg-white transition shadow-sm"
-                                  onClick={(e) => { e.stopPropagation(); onMoreLikeThis(pin); }}
+                                  onClick={handleVisualSearchClick}
                                   title="Visual Search"
                               >
-                                  <ScanSearch size={16} />
+                                  <ScanLine size={16} />
                               </button>
 
                               {/* Download Button */}

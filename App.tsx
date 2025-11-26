@@ -15,6 +15,7 @@ import { Messages } from './components/Messages';
 import { MonetizationDashboard } from './components/MonetizationDashboard'; 
 import { AuthModal } from './components/AuthModal';
 import { Onboarding } from './components/Onboarding';
+import { VisualSearchModal } from './components/VisualSearchModal';
 import { Pin, User, Board, ViewState, Story, PinSlide, Product } from './types';
 import { generatePinDetails } from './services/geminiService';
 import { Loader2, AlertTriangle, Cookie, Plus, SlidersHorizontal, CheckSquare, Trash2, FolderPlus, Download, X, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -123,12 +124,16 @@ const App: React.FC = () => {
   const [isOrganizing, setIsOrganizing] = useState(false);
   const [selectedPinIds, setSelectedPinIds] = useState<Set<string>>(new Set());
 
-  // User List Modal State
+  // User & Profile State
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [userListConfig, setUserListConfig] = useState<{isOpen: boolean, type: 'followers' | 'following', user?: User, userList: User[]}>({ 
       isOpen: false, 
       type: 'followers', 
       userList: [] 
   });
+
+  // Visual Search State
+  const [visualSearchPin, setVisualSearchPin] = useState<Pin | null>(null);
 
   // Scroll Refs for Custom Navigation
   const storiesRef = useRef<HTMLDivElement>(null);
@@ -191,6 +196,15 @@ const App: React.FC = () => {
           user: u,
           userList: generateMockUsersList(8)
       });
+  };
+
+  const handleUserClick = (user: User) => {
+      if (user.id === currentUser.id) {
+          navigateTo(ViewState.PROFILE);
+      } else {
+          setSelectedUser(user);
+          navigateTo(ViewState.USER_PROFILE);
+      }
   };
 
   const togglePinSelection = (pinId: string) => {
@@ -364,6 +378,8 @@ const App: React.FC = () => {
                                 isSelected={selectedPinIds.has(pin.id)}
                                 onSelect={togglePinSelection}
                                 isCreator={currentUser.isCreator && pin.author.id === currentUser.id}
+                                onUserClick={handleUserClick}
+                                onVisualSearch={(p) => setVisualSearchPin(p)}
                               />
                           ))}
                       </div>
@@ -402,14 +418,14 @@ const App: React.FC = () => {
               if(!selectedBoard) return <div>404 Board Not Found</div>;
               return <BoardDetail board={selectedBoard} pins={[]} allBoards={boards} onBack={goBack} onPinClick={() => {}} onInvite={() => {}} onMoreLikeThis={() => {}} onStash={() => {}} onTagClick={() => {}} />;
           case ViewState.MESSAGES:
-              return <Messages currentUser={currentUser} onClose={() => navigateTo(ViewState.HOME)} onViewProfile={() => {}} />;
+              return <Messages currentUser={currentUser} onClose={() => navigateTo(ViewState.HOME)} onViewProfile={(u) => handleUserClick(u)} />;
           case ViewState.USER_PROFILE:
-             // Mock user for UserProfile view if we had navigation to it, passing handleShowFollowers
+             if(!selectedUser) return null;
              return <UserProfile 
-                 user={currentUser} 
-                 pins={[]} 
+                 user={selectedUser} 
+                 pins={generateMockPins(10)} 
                  onBack={goBack} 
-                 onPinClick={() => {}} 
+                 onPinClick={(p) => setSelectedPin(p)} 
                  onShowFollowers={handleShowFollowers} 
                  onShowFollowing={handleShowFollowing} 
              />;
@@ -469,7 +485,17 @@ const App: React.FC = () => {
           relatedPins={generateMockPins(10, selectedPin.title, selectedPin.type === 'video' ? 'video' : 'image')} 
           boards={boards} 
           onTagClick={() => {}} 
+          onUserClick={handleUserClick}
         />
+      )}
+
+      {visualSearchPin && (
+          <VisualSearchModal 
+              pin={visualSearchPin}
+              onClose={() => setVisualSearchPin(null)}
+              onResultClick={(p) => { setVisualSearchPin(null); setSelectedPin(p); }}
+              boards={boards}
+          />
       )}
 
       {activeStoryIndex !== null && (
@@ -477,6 +503,7 @@ const App: React.FC = () => {
             initialIndex={activeStoryIndex} 
             stories={stories} 
             onClose={() => setActiveStoryIndex(null)} 
+            onUserClick={handleUserClick}
           />
       )}
 
