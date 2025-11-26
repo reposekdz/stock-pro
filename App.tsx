@@ -307,8 +307,8 @@ const App: React.FC = () => {
                           </div>
                       )}
 
-                      {/* Main Grid */}
-                      <div className="masonry-grid pb-32 px-4 transition-all duration-300">
+                      {/* Main Grid - Reduced padding on mobile (px-2) to make images larger */}
+                      <div className="masonry-grid pb-32 px-2 md:px-4 transition-all duration-300">
                           {getFilteredPins().map(pin => (
                               <PinCard 
                                 key={pin.id} 
