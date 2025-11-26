@@ -102,7 +102,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, user }) =
                             <div className="flex justify-between items-center py-2">
                                 <div>
                                     <p className="font-bold">Email Address</p>
-                                    <p className="text-sm text-gray-500">{username}@example.com</p>
+                                    <p className="text-sm text-gray-500">{username}@stocpro.net</p>
                                 </div>
                                 <button className="px-4 py-2 bg-gray-100 rounded-full font-bold text-xs hover:bg-gray-200">Edit</button>
                             </div>

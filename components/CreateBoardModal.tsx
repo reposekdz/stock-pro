@@ -45,7 +45,7 @@ export const CreateBoardModal: React.FC<CreateBoardModalProps> = ({ onClose, onC
                         <input 
                             type="text" 
                             placeholder='e.g., "Dream Home" or "Design Inspo"' 
-                            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-5 py-4 font-bold text-lg outline-none focus:ring-2 ring-black transition placeholder:font-medium"
+                            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-5 py-4 font-bold text-lg outline-none focus:ring-2 ring-emerald-500 transition placeholder:font-medium"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             autoFocus
@@ -58,7 +58,7 @@ export const CreateBoardModal: React.FC<CreateBoardModalProps> = ({ onClose, onC
                             <AlignLeft className="absolute left-4 top-4 text-gray-400" size={18} />
                             <textarea 
                                 placeholder="What's this board about?" 
-                                className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-12 pr-4 py-4 font-medium outline-none focus:ring-2 ring-black transition resize-none h-32"
+                                className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-12 pr-4 py-4 font-medium outline-none focus:ring-2 ring-emerald-500 transition resize-none h-32"
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
                             />
@@ -72,7 +72,7 @@ export const CreateBoardModal: React.FC<CreateBoardModalProps> = ({ onClose, onC
                             <input 
                                 type="text" 
                                 placeholder="Enter emails or usernames, comma separated" 
-                                className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-12 pr-4 py-4 font-medium outline-none focus:ring-2 ring-black transition"
+                                className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-12 pr-4 py-4 font-medium outline-none focus:ring-2 ring-emerald-500 transition"
                                 value={collaborators}
                                 onChange={(e) => setCollaborators(e.target.value)}
                             />
@@ -91,7 +91,7 @@ export const CreateBoardModal: React.FC<CreateBoardModalProps> = ({ onClose, onC
                                 </p>
                             </div>
                         </div>
-                        <div className={`w-12 h-7 rounded-full transition-colors relative ${isPrivate ? 'bg-black' : 'bg-gray-300'}`}>
+                        <div className={`w-12 h-7 rounded-full transition-colors relative ${isPrivate ? 'bg-emerald-500' : 'bg-gray-300'}`}>
                             <div className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${isPrivate ? 'left-6' : 'left-1'}`}></div>
                         </div>
                     </div>
@@ -99,7 +99,7 @@ export const CreateBoardModal: React.FC<CreateBoardModalProps> = ({ onClose, onC
                     <button 
                         type="submit"
                         disabled={!title.trim() || isSubmitting}
-                        className="w-full bg-black text-white py-4 rounded-xl font-bold text-lg hover:bg-gray-800 transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group"
+                        className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-4 rounded-xl font-bold text-lg hover:shadow-lg hover:shadow-emerald-200 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group"
                     >
                         {isSubmitting ? (
                             <>Creating <Sparkles size={18} className="animate-spin" /></>

@@ -14,6 +14,7 @@ interface ProfileProps {
 }
 
 export const Profile: React.FC<ProfileProps> = ({ user, boards, savedPins, onCreateBoard, onOpenBoard, onShowFollowers, onShowFollowing }) => {
+    // Default to 'saved' to show where saved items go immediately
     const [activeTab, setActiveTab] = useState<'created' | 'saved'>('saved');
     const [isEditing, setIsEditing] = useState(false);
     const [coverImage, setCoverImage] = useState(user.coverUrl || `https://picsum.photos/seed/${user.username}cover/1600/400`);
@@ -270,7 +271,16 @@ export const Profile: React.FC<ProfileProps> = ({ user, boards, savedPins, onCre
                     <p className="font-bold text-gray-600 group-hover:text-emerald-600">Create Board</p>
                 </div>
 
-                {boards.map(board => (
+                {/* Empty State for Saved Tab */}
+                {activeTab === 'saved' && boards.length === 0 && (
+                    <div className="col-span-full flex flex-col items-center justify-center py-20 text-gray-400">
+                        <p className="font-medium text-lg">You haven't saved any pins yet.</p>
+                        <button onClick={onCreateBoard} className="mt-4 font-bold text-emerald-600 hover:underline">Create a Board</button>
+                    </div>
+                )}
+
+                {/* Display Boards in Saved Tab */}
+                {activeTab === 'saved' && boards.map(board => (
                     <div 
                         key={board.id} 
                         className="cursor-pointer group relative"
@@ -288,7 +298,7 @@ export const Profile: React.FC<ProfileProps> = ({ user, boards, savedPins, onCre
                                 </div>
                             )}
 
-                            {/* Images */}
+                            {/* Images - Mocked for specific slots */}
                             <div className="col-span-1 row-span-2 bg-gray-200 group-hover:opacity-90 transition">
                                 <img src={`https://picsum.photos/seed/${board.id}1/300/600`} className="w-full h-full object-cover" />
                             </div>

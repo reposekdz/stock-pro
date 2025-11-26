@@ -82,7 +82,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ user, pins, onBack, on
                             className={`px-8 py-3 rounded-full font-bold transition-all shadow-md active:scale-95 flex items-center gap-2 border
                                 ${isFollowing 
                                     ? 'bg-transparent text-gray-900 border-gray-300 hover:bg-gray-50' 
-                                    : 'bg-emerald-600 hover:bg-emerald-700 text-white border-transparent'}`}
+                                    : 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:shadow-emerald-200 text-white border-transparent'}`}
                         >
                             {isFollowing ? (
                                 <>Following <Check size={18} /></>
@@ -106,13 +106,13 @@ export const UserProfile: React.FC<UserProfileProps> = ({ user, pins, onBack, on
                 <div className="flex justify-center gap-8 mb-8 border-b border-gray-100">
                     <button 
                         onClick={() => setActiveTab('created')}
-                        className={`pb-3 font-bold text-lg px-4 transition-all ${activeTab === 'created' ? 'border-b-4 border-black text-black' : 'text-gray-400 hover:text-gray-600'}`}
+                        className={`pb-3 font-bold text-lg px-4 transition-all ${activeTab === 'created' ? 'border-b-4 border-emerald-500 text-black' : 'text-gray-400 hover:text-gray-600'}`}
                     >
                         Created
                     </button>
                     <button 
                         onClick={() => setActiveTab('saved')}
-                        className={`pb-3 font-bold text-lg px-4 transition-all ${activeTab === 'saved' ? 'border-b-4 border-black text-black' : 'text-gray-400 hover:text-gray-600'}`}
+                        className={`pb-3 font-bold text-lg px-4 transition-all ${activeTab === 'saved' ? 'border-b-4 border-emerald-500 text-black' : 'text-gray-400 hover:text-gray-600'}`}
                     >
                         Saved
                     </button>

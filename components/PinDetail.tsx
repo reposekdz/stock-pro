@@ -144,7 +144,7 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
                  <img 
                     src={activeMediaUrl} 
                     alt={pin.title} 
-                    className="max-w-full max-h-full object-contain transition-transform duration-100 ease-linear shadow-2xl"
+                    className="max-w-full max-h-full object-contain transition-transform duration-100 ease-linear shadow-2xl rounded-lg"
                     style={{
                         transform: isZooming && !isTaggingMode ? 'scale(1.5)' : 'scale(1)',
                         transformOrigin: `${zoomPosition.x}% ${zoomPosition.y}%`
@@ -195,12 +195,14 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
                     </button>
                 </div>
                 <div className="flex gap-3">
-                    <button className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-full font-bold hover:shadow-lg transition">Save</button>
+                    <button className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-full font-bold hover:shadow-lg shadow-emerald-200 transition">Save</button>
                 </div>
             </div>
 
             <div className="p-8">
-                <a href={pin.videoUrl || '#'} target="_blank" className="text-sm underline font-medium text-gray-800 mb-2 block truncate">example.com</a>
+                <a href={pin.videoUrl || '#'} target="_blank" className="text-sm underline font-medium text-gray-800 mb-2 block truncate">
+                    {pin.videoUrl ? 'youtube.com/watch' : 'stoc.pro/source'}
+                </a>
                 <h1 className="text-4xl font-extrabold mb-4 text-gray-900 leading-tight">{pin.title}</h1>
                 <p className="text-gray-600 text-lg mb-8 leading-relaxed">{pin.description}</p>
 
@@ -249,7 +251,7 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
                     />
                     <button 
                         disabled={!newComment.trim()}
-                        className="p-4 bg-red-500 text-white rounded-full disabled:opacity-50 disabled:bg-gray-200 disabled:text-gray-400 transition shadow-lg"
+                        className="p-4 bg-emerald-500 text-white rounded-full disabled:opacity-50 disabled:bg-gray-200 disabled:text-gray-400 transition shadow-lg hover:bg-emerald-600"
                     >
                         <Send size={20} />
                     </button>

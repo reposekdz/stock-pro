@@ -51,6 +51,7 @@ export interface VideoEditSettings {
     volume: number;
     speed: number;
     hasCaptions: boolean;
+    filter?: string;
 }
 
 export interface Product {

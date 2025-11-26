@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Mail, ArrowRight, Lock, Eye, EyeOff, Fingerprint, ScanFace, Wand2, CheckCircle2 } from 'lucide-react';
+import { X, Mail, ArrowRight, Lock, Eye, EyeOff, Fingerprint, ScanFace, Wand2, CheckCircle2, ShieldCheck, AlertCircle, Apple, Facebook, Github, Loader2, Sparkles, Globe } from 'lucide-react';
+import confetti from 'canvas-confetti';
 
 interface AuthModalProps {
     onLogin: () => void;
@@ -14,15 +15,53 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onLogin, onClose }) => {
     const [password, setPassword] = useState('');
     const [isBiometricLoading, setIsBiometricLoading] = useState(false);
     const [magicLinkSent, setMagicLinkSent] = useState(false);
+    const [shake, setShake] = useState(false);
+    const [passwordStrength, setPasswordStrength] = useState(0);
+    const [socialLoading, setSocialLoading] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!password) {
+            setPasswordStrength(0);
+            return;
+        }
+        let strength = 0;
+        if (password.length > 6) strength += 25;
+        if (/[A-Z]/.test(password)) strength += 25;
+        if (/[0-9]/.test(password)) strength += 25;
+        if (/[^A-Za-z0-9]/.test(password)) strength += 25;
+        setPasswordStrength(strength);
+    }, [password]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        if (!email || !password) {
+            setShake(true);
+            setTimeout(() => setShake(false), 500);
+            return;
+        }
+
+        confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 }
+        });
+        
         onLogin();
+    };
+
+    const handleSocialLogin = (provider: string) => {
+        setSocialLoading(provider);
+        setTimeout(() => {
+             confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
+             onLogin();
+             setSocialLoading(null);
+        }, 1500);
     };
 
     const simulateBiometric = () => {
         setIsBiometricLoading(true);
         setTimeout(() => {
+            confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
             onLogin();
         }, 1500);
     };
@@ -34,111 +73,137 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onLogin, onClose }) => {
 
     return (
         <div className="fixed inset-0 z-[200] flex items-center justify-center animate-in fade-in duration-300">
-            {/* Dynamic Background */}
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-md"></div>
-            <div className="absolute inset-0 overflow-hidden opacity-20 pointer-events-none">
-                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500 rounded-full blur-[128px] animate-pulse"></div>
-                <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-emerald-500 rounded-full blur-[128px] animate-pulse delay-1000"></div>
-            </div>
-
-            <div className="bg-white/90 backdrop-blur-xl w-full max-w-md rounded-[40px] p-8 shadow-2xl relative animate-in zoom-in-95 duration-300 border border-white/50">
+            {/* Background */}
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity"></div>
+            
+            <div 
+                className={`relative bg-white w-full max-w-4xl h-[600px] rounded-[32px] shadow-2xl overflow-hidden flex animate-in zoom-in-95 duration-300 ${shake ? 'animate-[shake_0.5s_ease-in-out]' : ''}`}
+            >
                 <button 
                     onClick={onClose}
-                    className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full text-gray-500 transition-colors"
+                    className="absolute top-4 right-4 z-50 p-2 hover:bg-gray-100 rounded-full text-gray-500 transition-colors"
                 >
                     <X size={20} />
                 </button>
 
-                <div className="text-center mb-8">
-                    <div className="w-20 h-20 bg-black rounded-2xl mx-auto mb-6 flex items-center justify-center shadow-lg transform rotate-3 hover:rotate-0 transition-transform duration-500">
-                        <span className="text-white text-4xl font-black tracking-tighter">S</span>
+                {/* Left Panel - Branding & Visuals */}
+                <div className="hidden md:flex w-1/2 bg-black relative flex-col justify-between p-10 overflow-hidden text-white">
+                    <div className="absolute inset-0 opacity-40">
+                         <img src="https://picsum.photos/seed/authwall/800/1200" className="w-full h-full object-cover grayscale mix-blend-overlay" />
                     </div>
-                    <h2 className="text-3xl font-black text-gray-900 mb-2 tracking-tight">{isSignUp ? 'Join Stoc Pro' : 'Welcome Back'}</h2>
-                    <p className="text-gray-500 font-medium">The visual discovery engine for pros.</p>
+                    <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/40 via-transparent to-black/50"></div>
+                    
+                    <div className="relative z-10">
+                         <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center mb-6 shadow-lg shadow-emerald-900/20">
+                            <span className="text-white text-2xl font-black">S</span>
+                         </div>
+                         <h1 className="text-4xl font-black tracking-tight mb-2">Welcome to Stoc Pro.</h1>
+                         <p className="text-gray-300 font-medium">The world's most advanced visual discovery engine.</p>
+                    </div>
+
+                    <div className="relative z-10 space-y-4">
+                        <div className="flex items-center gap-2 text-sm font-bold bg-white/10 w-fit px-3 py-1 rounded-full backdrop-blur-md border border-white/10">
+                            <Globe size={14} className="text-emerald-400"/>
+                            <span>Used by 2M+ Creators</span>
+                        </div>
+                        <p className="text-sm text-gray-400 leading-relaxed">
+                            "Stoc Pro has completely revolutionized how I find and organize inspiration. The AI features are mind-blowing!"
+                        </p>
+                        <div className="flex items-center gap-3">
+                            <img src="https://picsum.photos/seed/u1/50/50" className="w-8 h-8 rounded-full border border-white/30"/>
+                            <span className="text-xs font-bold text-white">Sarah Jenkins, Designer</span>
+                        </div>
+                    </div>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4 relative z-10">
-                    <div className="space-y-1">
-                        <label className="text-xs font-bold text-gray-500 uppercase ml-1">Email</label>
-                        <div className="relative group">
-                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-black transition-colors" size={18} />
-                            <input 
-                                type="email" 
-                                placeholder="name@example.com" 
-                                className="w-full bg-white border border-gray-200 rounded-xl py-4 pl-12 pr-4 font-bold outline-none focus:ring-2 ring-black focus:border-transparent transition shadow-sm"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                autoFocus
-                            />
+                {/* Right Panel - Auth Form */}
+                <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center bg-white relative">
+                     <div className="text-center mb-8 md:text-left">
+                        <h2 className="text-2xl font-black text-gray-900 tracking-tight mb-2">{isSignUp ? 'Create an account' : 'Log in to your account'}</h2>
+                        <p className="text-gray-500 text-sm">Enter your details below to continue.</p>
+                     </div>
+
+                     <div className="grid grid-cols-3 gap-3 mb-8">
+                         <button 
+                             onClick={() => handleSocialLogin('google')}
+                             className="flex items-center justify-center py-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition relative overflow-hidden group"
+                         >
+                             {socialLoading === 'google' ? <Loader2 size={20} className="animate-spin text-gray-400"/> : <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" className="w-5 h-5 group-hover:scale-110 transition-transform"/>}
+                         </button>
+                         <button 
+                             onClick={() => handleSocialLogin('apple')}
+                             className="flex items-center justify-center py-3 border border-gray-200 rounded-xl hover:bg-black hover:text-white transition relative overflow-hidden group"
+                         >
+                             {socialLoading === 'apple' ? <Loader2 size={20} className="animate-spin text-gray-400"/> : <Apple size={22} className="group-hover:scale-110 transition-transform"/>}
+                         </button>
+                         <button 
+                             onClick={() => handleSocialLogin('facebook')}
+                             className="flex items-center justify-center py-3 border border-gray-200 rounded-xl hover:bg-[#1877F2] hover:text-white hover:border-[#1877F2] transition relative overflow-hidden group"
+                         >
+                             {socialLoading === 'facebook' ? <Loader2 size={20} className="animate-spin text-gray-400"/> : <Facebook size={22} className="group-hover:scale-110 transition-transform"/>}
+                         </button>
+                     </div>
+
+                     <div className="relative mb-6">
+                        <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200"></div></div>
+                        <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-gray-400 font-bold">Or</span></div>
+                     </div>
+
+                     <form onSubmit={handleSubmit} className="space-y-4">
+                        <div className="space-y-1">
+                            <label className="text-xs font-bold text-gray-500 uppercase ml-1">Email</label>
+                            <div className="relative group">
+                                <Mail className="absolute left-4 top-3.5 text-gray-400 group-focus-within:text-emerald-500 transition-colors" size={18} />
+                                <input 
+                                    type="email" 
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 pl-11 pr-4 font-medium outline-none focus:ring-2 ring-emerald-500 focus:bg-white transition"
+                                    placeholder="yourname@email.com"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                />
+                            </div>
                         </div>
-                    </div>
 
-                    <div className="space-y-1">
-                        <label className="text-xs font-bold text-gray-500 uppercase ml-1">Password</label>
-                        <div className="relative group">
-                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-black transition-colors" size={18} />
-                            <input 
-                                type={showPassword ? "text" : "password"} 
-                                placeholder="••••••••" 
-                                className="w-full bg-white border border-gray-200 rounded-xl py-4 pl-12 pr-12 font-bold outline-none focus:ring-2 ring-black focus:border-transparent transition shadow-sm"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                            />
-                            <button 
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black transition-colors"
-                            >
-                                {showPassword ? <EyeOff size={18}/> : <Eye size={18}/>}
-                            </button>
+                        <div className="space-y-1">
+                            <label className="text-xs font-bold text-gray-500 uppercase ml-1">Password</label>
+                            <div className="relative group">
+                                <Lock className="absolute left-4 top-3.5 text-gray-400 group-focus-within:text-emerald-500 transition-colors" size={18} />
+                                <input 
+                                    type={showPassword ? "text" : "password"} 
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 pl-11 pr-12 font-medium outline-none focus:ring-2 ring-emerald-500 focus:bg-white transition"
+                                    placeholder="••••••••"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                />
+                                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-3.5 text-gray-400 hover:text-emerald-500 transition">
+                                    {showPassword ? <EyeOff size={18}/> : <Eye size={18}/>}
+                                </button>
+                            </div>
+                            {isSignUp && password && (
+                                <div className="h-1 w-full bg-gray-100 rounded-full mt-2 overflow-hidden">
+                                    <div 
+                                        className={`h-full transition-all duration-500 ${passwordStrength > 75 ? "bg-emerald-500" : passwordStrength > 50 ? "bg-yellow-500" : "bg-red-500"}`}
+                                        style={{ width: `${passwordStrength}%` }}
+                                    ></div>
+                                </div>
+                            )}
                         </div>
-                    </div>
 
-                    <button 
-                        type="submit"
-                        className="w-full bg-black text-white py-4 rounded-xl font-bold text-lg hover:bg-gray-800 transition shadow-lg hover:shadow-xl flex items-center justify-center gap-2 group mt-4 active:scale-95"
-                    >
-                        {isSignUp ? 'Create Account' : 'Log In'}
-                        <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-                    </button>
-                </form>
-
-                <div className="mt-6 grid grid-cols-2 gap-3">
-                     <button 
-                        type="button"
-                        onClick={simulateBiometric}
-                        className="flex flex-col items-center justify-center gap-2 py-4 bg-gray-50 border border-gray-200 rounded-2xl hover:bg-gray-100 transition active:scale-95 group"
-                     >
-                         {isBiometricLoading ? (
-                             <ScanFace size={24} className="text-emerald-600 animate-pulse"/>
-                         ) : (
-                             <Fingerprint size={24} className="text-gray-600 group-hover:text-black"/>
-                         )}
-                         <span className="text-xs font-bold text-gray-600">Passkey / FaceID</span>
-                     </button>
+                        <button 
+                            type="submit"
+                            className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-3.5 rounded-xl font-bold hover:shadow-lg hover:shadow-emerald-200 transition active:scale-95 flex items-center justify-center gap-2 group mt-2"
+                        >
+                            {isSignUp ? 'Create Account' : 'Log In'}
+                            <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                        </button>
+                     </form>
                      
-                     <button 
-                        type="button"
-                        onClick={sendMagicLink}
-                        className="flex flex-col items-center justify-center gap-2 py-4 bg-gray-50 border border-gray-200 rounded-2xl hover:bg-gray-100 transition active:scale-95 group"
-                     >
-                         {magicLinkSent ? (
-                             <CheckCircle2 size={24} className="text-green-500 animate-bounce"/>
-                         ) : (
-                             <Wand2 size={24} className="text-gray-600 group-hover:text-purple-600"/>
-                         )}
-                         <span className="text-xs font-bold text-gray-600">{magicLinkSent ? 'Link Sent!' : 'Magic Link'}</span>
-                     </button>
-                </div>
-
-                <div className="mt-8 text-center text-sm">
-                    <span className="text-gray-500 font-medium">{isSignUp ? 'Already have an account?' : "Don't have an account?"}</span>
-                    <button 
-                        onClick={() => setIsSignUp(!isSignUp)}
-                        className="font-black text-black ml-1 hover:underline decoration-2 underline-offset-4"
-                    >
-                        {isSignUp ? 'Log In' : 'Sign Up'}
-                    </button>
+                     <div className="mt-6 flex items-center justify-center gap-2 text-sm">
+                         <span className="text-gray-500">{isSignUp ? 'Already have an account?' : "Don't have an account?"}</span>
+                         <button onClick={() => setIsSignUp(!isSignUp)} className="font-bold text-emerald-600 hover:underline">
+                             {isSignUp ? 'Log in' : 'Sign up'}
+                         </button>
+                     </div>
                 </div>
             </div>
         </div>

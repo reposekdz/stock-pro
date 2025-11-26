@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Bell, MessageCircle, User as UserIcon, X, Camera, ArrowLeft, ArrowRight, Eye, Sparkles, Settings, Heart, UserPlus, Plus, TrendingUp, History } from 'lucide-react';
+import { Search, Bell, MessageCircle, User as UserIcon, X, Camera, ArrowLeft, ArrowRight, Eye, Sparkles, Settings, Heart, UserPlus, Plus, TrendingUp, History, LogIn } from 'lucide-react';
 import { Notification } from '../types';
 
 interface HeaderProps {
@@ -16,6 +16,8 @@ interface HeaderProps {
   onBack: () => void;
   onForward: () => void;
   onCreateClick: () => void;
+  isLoggedIn: boolean;
+  onLoginClick: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
@@ -30,13 +32,14 @@ export const Header: React.FC<HeaderProps> = ({
     canGoForward,
     onBack,
     onForward,
-    onCreateClick
+    onCreateClick,
+    isLoggedIn,
+    onLoginClick
 }) => {
   const [searchValue, setSearchValue] = useState(currentQuery || '');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const searchRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     // Load history from local storage (mock)
@@ -69,10 +72,10 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="max-w-[1920px] mx-auto bg-white/80 backdrop-blur-2xl rounded-full px-3 py-3 shadow-[0_8px_32px_rgba(0,0,0,0.08)] border border-white/50 flex items-center justify-between gap-4 relative">
         
         <div className="flex items-center gap-4 pl-1">
-           <button onClick={onHomeClick} className="w-12 h-12 bg-black rounded-full flex items-center justify-center text-white font-black text-2xl hover:scale-105 transition shadow-lg">S</button>
+           <button onClick={onHomeClick} className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center text-white font-black text-2xl hover:scale-105 transition shadow-lg shadow-emerald-200">S</button>
            <div className="hidden md:flex gap-2">
-               <button onClick={onBack} disabled={!canGoBack} className="p-2.5 rounded-full bg-gray-100 disabled:opacity-50"><ArrowLeft size={18}/></button>
-               <button onClick={onForward} disabled={!canGoForward} className="p-2.5 rounded-full bg-gray-100 disabled:opacity-50"><ArrowRight size={18}/></button>
+               <button onClick={onBack} disabled={!canGoBack} className="p-2.5 rounded-full bg-gray-100 disabled:opacity-50 hover:bg-gray-200 transition"><ArrowLeft size={18}/></button>
+               <button onClick={onForward} disabled={!canGoForward} className="p-2.5 rounded-full bg-gray-100 disabled:opacity-50 hover:bg-gray-200 transition"><ArrowRight size={18}/></button>
            </div>
         </div>
 
@@ -105,7 +108,7 @@ export const Header: React.FC<HeaderProps> = ({
                                     onMouseDown={() => handleSearchSubmit(term)}
                                 >
                                     <div className="flex items-center gap-3">
-                                        <History size={16} className="text-gray-400 group-hover/item:text-black"/>
+                                        <History size={16} className="text-gray-400 group-hover/item:text-emerald-600"/>
                                         <span className="font-bold text-gray-700 group-hover/item:text-black">{term}</span>
                                     </div>
                                     <button 
@@ -122,9 +125,32 @@ export const Header: React.FC<HeaderProps> = ({
             )}
         </div>
 
-        <div className="flex items-center gap-1 md:gap-2">
-            <button onClick={onCreateClick} className="p-3 bg-black text-white rounded-full hover:scale-105 transition shadow-lg"><Plus size={24}/></button>
-            <button onClick={onProfileClick} className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden hover:opacity-80 transition"><img src="https://picsum.photos/seed/userPro/100/100" className="w-full h-full object-cover" /></button>
+        <div className="flex items-center gap-2 md:gap-3">
+            {isLoggedIn ? (
+                <>
+                    <button onClick={onMessagesClick} className="p-3 bg-gray-100 rounded-full hover:bg-gray-200 transition text-gray-700 relative group">
+                        <MessageCircle size={22} className="group-hover:text-emerald-600 transition-colors"/>
+                    </button>
+                    <button onClick={onCreateClick} className="hidden md:flex p-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-full hover:shadow-lg hover:scale-105 transition shadow-emerald-200 items-center gap-2 px-6">
+                        <Plus size={20}/> <span className="font-bold">Create</span>
+                    </button>
+                    <button onClick={onCreateClick} className="md:hidden p-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-full hover:scale-105 transition shadow-lg">
+                        <Plus size={24}/>
+                    </button>
+                    <button onClick={onProfileClick} className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden hover:opacity-80 transition border border-gray-100 shadow-sm hover:ring-2 ring-emerald-500">
+                        <img src="https://picsum.photos/seed/userPro/100/100" className="w-full h-full object-cover" />
+                    </button>
+                </>
+            ) : (
+                <>
+                     <button onClick={onLoginClick} className="px-5 py-2.5 rounded-full font-bold text-gray-900 hover:bg-gray-100 transition">
+                         Log in
+                     </button>
+                     <button onClick={onLoginClick} className="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-full font-bold hover:shadow-lg hover:scale-105 transition shadow-emerald-200">
+                         Sign up
+                     </button>
+                </>
+            )}
         </div>
       </div>
     </header>

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Phone, Video, Info, Image, Mic, Send, MoreVertical, ChevronLeft, CheckCheck, Check, Clock, Smile, Paperclip, X, MicOff, VideoOff, PhoneOff, Sparkles, Layout, FileText, Play, Pause, Sticker, Reply, Pin as PinIcon, Download, Trash2, Heart, Users, Plus, BarChart2, Edit2, ArrowDown, Monitor, Grid, Minimize2, Star, Share2, UploadCloud } from 'lucide-react';
+import { Search, Phone, Video, Info, Image, Mic, Send, MoreVertical, ChevronLeft, CheckCheck, Check, Clock, Smile, Paperclip, X, MicOff, VideoOff, PhoneOff, Sparkles, Layout, FileText, Play, Pause, Sticker, Reply, Pin as PinIcon, Download, Trash2, Heart, Users, Plus, BarChart2, Edit2, ArrowDown, Monitor, Grid, Minimize2, Star, Share2, UploadCloud, Palette } from 'lucide-react';
 import { User, Conversation, Message, PollOption, MessageStatus } from '../types';
 
 interface MessagesProps {
@@ -82,6 +82,13 @@ const generateMockConversations = (currentUserId: string): Conversation[] => {
 const STICKERS = ['👻', '🔥', '✨', '💖', '🎉', '👀', '🚀', '💯', '🎨', '👋', '🤔', '😂'];
 const SMART_REPLIES = ["Awesome!", "Thanks for sharing", "Can't wait!", "👀", "Got it"];
 
+const CHAT_THEMES = [
+    { id: 'default', name: 'Classic', css: 'bg-[#FDFDFD]' },
+    { id: 'gradient-emerald', name: 'Emerald', css: 'bg-gradient-to-br from-emerald-50 to-teal-50' },
+    { id: 'gradient-purple', name: 'Lavender', css: 'bg-gradient-to-br from-purple-50 to-pink-50' },
+    { id: 'dark-blue', name: 'Midnight', css: 'bg-gradient-to-br from-slate-900 to-slate-800 text-white' },
+];
+
 export const Messages: React.FC<MessagesProps> = ({ currentUser, onClose, onViewProfile }) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConvId, setSelectedConvId] = useState<string | null>(null);
@@ -109,6 +116,10 @@ export const Messages: React.FC<MessagesProps> = ({ currentUser, onClose, onView
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
+
+  // Theme
+  const [currentTheme, setCurrentTheme] = useState(CHAT_THEMES[0]);
+  const [showThemePicker, setShowThemePicker] = useState(false);
 
   // Call State
   const [callStatus, setCallStatus] = useState<'idle' | 'ringing' | 'connected' | 'ended'>('idle');
@@ -513,7 +524,12 @@ export const Messages: React.FC<MessagesProps> = ({ currentUser, onClose, onView
                           ) : (
                               <>
                                   <img src={conv.user.avatarUrl} alt="" className="w-14 h-14 rounded-full object-cover border border-gray-100" />
-                                  {conv.isOnline && <div className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white ring-1 ring-gray-100"></div>}
+                                  {conv.isOnline && (
+                                      <span className="absolute bottom-0.5 right-0.5 flex h-3.5 w-3.5">
+                                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                          <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-green-500 border-2 border-white"></span>
+                                      </span>
+                                  )}
                               </>
                           )}
                       </div>
@@ -600,7 +616,7 @@ export const Messages: React.FC<MessagesProps> = ({ currentUser, onClose, onView
       {/* Active Chat Area */}
       {activeConversation ? (
           <div 
-            className={`flex-1 flex flex-col h-full ${selectedConvId ? 'flex' : 'hidden md:flex'} relative bg-gray-50`}
+            className={`flex-1 flex flex-col h-full ${selectedConvId ? 'flex' : 'hidden md:flex'} relative ${currentTheme.css}`}
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
             onDragOver={handleDrag}
@@ -629,7 +645,12 @@ export const Messages: React.FC<MessagesProps> = ({ currentUser, onClose, onView
                           ) : (
                               <>
                                 <img src={activeConversation.user.avatarUrl} className="w-10 h-10 rounded-full border border-gray-100" alt="" />
-                                {activeConversation.isOnline && <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white"></div>}
+                                {activeConversation.isOnline && (
+                                    <span className="absolute bottom-0 right-0 flex h-3 w-3">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500 border-2 border-white"></span>
+                                    </span>
+                                )}
                               </>
                           )}
                       </div>
@@ -646,12 +667,30 @@ export const Messages: React.FC<MessagesProps> = ({ currentUser, onClose, onView
                   </div>
                   <div className="flex items-center gap-1 text-gray-500">
                       <button onClick={() => setShowChatSearch(!showChatSearch)} className={`p-2.5 hover:bg-emerald-50 hover:text-emerald-600 rounded-full transition ${showChatSearch ? 'bg-emerald-50 text-emerald-600' : ''}`}><Search size={20}/></button>
+                      <button onClick={() => setShowThemePicker(!showThemePicker)} className="p-2.5 hover:bg-emerald-50 hover:text-emerald-600 rounded-full transition"><Palette size={20}/></button>
+                      <div className="w-px h-6 bg-gray-200 mx-2"></div>
                       <button onClick={() => startCall('audio')} className="p-2.5 hover:bg-emerald-50 hover:text-emerald-600 rounded-full transition"><Phone size={20}/></button>
                       <button onClick={() => startCall('video')} className="p-2.5 hover:bg-emerald-50 hover:text-emerald-600 rounded-full transition"><Video size={20}/></button>
                       <div className="w-px h-6 bg-gray-200 mx-2"></div>
                       <button onClick={() => setShowDetails(!showDetails)} className={`p-2.5 hover:bg-emerald-50 hover:text-emerald-600 rounded-full transition ${showDetails ? 'bg-emerald-50 text-emerald-600' : ''}`}><Info size={20}/></button>
                   </div>
               </div>
+
+              {/* Theme Picker */}
+              {showThemePicker && (
+                  <div className="absolute top-20 right-4 z-40 bg-white p-4 rounded-2xl shadow-xl border border-gray-100 animate-in zoom-in-95">
+                      <h4 className="text-xs font-bold uppercase text-gray-400 mb-3">Wallpaper</h4>
+                      <div className="grid grid-cols-2 gap-2 w-48">
+                          {CHAT_THEMES.map(theme => (
+                              <button 
+                                key={theme.id}
+                                onClick={() => { setCurrentTheme(theme); setShowThemePicker(false); }}
+                                className={`h-12 rounded-lg border-2 ${theme.css} ${currentTheme.id === theme.id ? 'border-emerald-500' : 'border-transparent hover:border-gray-200'}`}
+                              ></button>
+                          ))}
+                      </div>
+                  </div>
+              )}
 
               {/* In-Chat Search Bar */}
               {showChatSearch && (
@@ -682,7 +721,7 @@ export const Messages: React.FC<MessagesProps> = ({ currentUser, onClose, onView
               )}
 
               {/* Messages Feed */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-[#FDFDFD]">
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
                   {/* System Welcome Message */}
                   {activeConversation.isGroup && (
                       <div className="flex justify-center my-6">
@@ -749,7 +788,7 @@ export const Messages: React.FC<MessagesProps> = ({ currentUser, onClose, onView
                                         ${msg.type === 'sticker' ? 'bg-transparent shadow-none' : 
                                           msg.type === 'image' || msg.type === 'pin' ? 'p-1 bg-white border border-gray-100' :
                                           msg.type === 'poll' ? 'bg-white border border-gray-100 w-64' :
-                                          isMe ? 'bg-black text-white rounded-br-none' : 'bg-white text-gray-900 rounded-bl-none border border-gray-100'
+                                          isMe ? 'bg-gradient-to-br from-gray-900 to-black text-white rounded-br-none' : 'bg-white text-gray-900 rounded-bl-none border border-gray-100'
                                         }
                                       `}>
                                           
@@ -893,7 +932,7 @@ export const Messages: React.FC<MessagesProps> = ({ currentUser, onClose, onView
               </div>
 
               {/* Input Area */}
-              <div className="bg-white border-t border-gray-100 relative z-30">
+              <div className="bg-white/80 backdrop-blur-md border-t border-gray-200 relative z-30">
                   {/* Smart Replies */}
                   {!isTyping && !editingMessageId && !inputText && (
                     <div className="flex gap-2 px-4 pt-3 overflow-x-auto scrollbar-hide">
