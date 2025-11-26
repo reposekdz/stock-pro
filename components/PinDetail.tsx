@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useRef } from 'react';
-import { X, MoreHorizontal, Share2, BadgeCheck, Heart, Smile, ChevronDown, Download, Maximize2, Crop, Sparkles, ShoppingBag, Search, Lock, Crown, Play, Pause, Volume2, VolumeX, Megaphone, Briefcase, ChevronLeft, ChevronRight, Tag, Send, Copy, Link as LinkIcon, Facebook, Twitter, Instagram } from 'lucide-react';
+import { X, MoreHorizontal, Share2, BadgeCheck, Heart, Smile, ChevronDown, Download, Maximize2, Crop, Sparkles, ShoppingBag, Search, Lock, Crown, Play, Pause, Volume2, VolumeX, Megaphone, Briefcase, ChevronLeft, ChevronRight, Tag, Send, Copy, Link as LinkIcon, Facebook, Twitter, Instagram, Film, Monitor } from 'lucide-react';
 import { Pin, Comment, Board, User, Product } from '../types';
 import { generateRelatedComments } from '../services/geminiService';
 import { PinCard } from './PinCard';
@@ -29,6 +29,7 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
   const [newComment, setNewComment] = useState("");
   const [isTaggingMode, setIsTaggingMode] = useState(false);
   const [showShareSheet, setShowShareSheet] = useState(false);
+  const [cinemaMode, setCinemaMode] = useState(false);
   
   // Magic Zoom & Visual Dots State
   const [zoomPosition, setZoomPosition] = useState({ x: 0, y: 0 });
@@ -106,7 +107,7 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-      if (!imageContainerRef.current || isTaggingMode) return;
+      if (!imageContainerRef.current || isTaggingMode || pin.type === 'video') return;
       const { left, top, width, height } = imageContainerRef.current.getBoundingClientRect();
       const x = ((e.clientX - left) / width) * 100;
       const y = ((e.clientY - top) / height) * 100;
@@ -125,10 +126,10 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
   const activeMediaUrl = pin.slides ? pin.slides[currentSlideIndex].url : pin.imageUrl;
   
   return (
-    <div className="fixed inset-0 z-[100] bg-white flex flex-col md:flex-row animate-in fade-in duration-200">
+    <div className={`fixed inset-0 z-[200] bg-white flex flex-col md:flex-row animate-in fade-in duration-200 ${cinemaMode ? 'bg-black' : ''}`}>
         
         <button 
-            className="fixed top-6 left-6 z-[110] p-3 bg-white/10 backdrop-blur-md border border-white/20 text-white rounded-full hover:bg-white hover:text-black hover:border-white transition-all duration-300 shadow-xl"
+            className="fixed top-6 left-6 z-[210] p-3 bg-white/10 backdrop-blur-md border border-white/20 text-white rounded-full hover:bg-white hover:text-black hover:border-white transition-all duration-300 shadow-xl"
             onClick={onClose}
         >
             <X size={24} />
@@ -136,7 +137,7 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
 
         {/* Left Side: Immersive Image/Video Viewer */}
         <div 
-            className={`w-full md:w-[60%] lg:w-[65%] h-[50vh] md:h-full bg-black flex items-center justify-center relative group overflow-hidden ${isTaggingMode ? 'cursor-crosshair' : 'cursor-zoom-in'}`}
+            className={`w-full md:w-[60%] lg:w-[65%] h-[50vh] md:h-full bg-black flex items-center justify-center relative group overflow-hidden ${isTaggingMode ? 'cursor-crosshair' : 'cursor-zoom-in'} ${cinemaMode ? 'md:w-full lg:w-full z-[150]' : ''}`}
             ref={imageContainerRef}
             onMouseMove={handleMouseMove}
             onMouseEnter={() => !isTaggingMode && setIsZooming(true)}
@@ -150,15 +151,24 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
             ></div>
             
             <div className="relative z-10 w-full h-full flex items-center justify-center overflow-hidden p-8">
-                 <img 
-                    src={activeMediaUrl} 
-                    alt={pin.title} 
-                    className="max-w-full max-h-full object-contain transition-transform duration-100 ease-linear shadow-2xl rounded-lg"
-                    style={{
-                        transform: isZooming && !isTaggingMode ? 'scale(1.5)' : 'scale(1)',
-                        transformOrigin: `${zoomPosition.x}% ${zoomPosition.y}%`
-                    }}
-                />
+                 {pin.type === 'video' ? (
+                     <video 
+                        src={pin.videoUrl || activeMediaUrl} 
+                        className="max-w-full max-h-full object-contain shadow-2xl rounded-lg"
+                        controls
+                        autoPlay
+                     />
+                 ) : (
+                    <img 
+                        src={activeMediaUrl} 
+                        alt={pin.title} 
+                        className="max-w-full max-h-full object-contain transition-transform duration-100 ease-linear shadow-2xl rounded-lg"
+                        style={{
+                            transform: isZooming && !isTaggingMode ? 'scale(1.5)' : 'scale(1)',
+                            transformOrigin: `${zoomPosition.x}% ${zoomPosition.y}%`
+                        }}
+                    />
+                 )}
 
                 {/* Visual Dots */}
                 {visualDots.map(dot => (
@@ -180,17 +190,29 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
 
             {/* Tools */}
             <div className="absolute bottom-8 right-8 z-20 flex flex-col gap-4">
-                <button 
-                    onClick={(e) => { e.stopPropagation(); setIsTaggingMode(!isTaggingMode); }}
-                    className={`p-4 rounded-full text-white transition shadow-lg border border-white/10 ${isTaggingMode ? 'bg-emerald-500' : 'bg-white/10 backdrop-blur-md hover:bg-white hover:text-black'}`}
-                    title="Add Tag"
-                >
-                    <Tag size={20} />
-                </button>
+                {pin.type === 'video' && (
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); setCinemaMode(!cinemaMode); }}
+                        className={`p-4 rounded-full transition shadow-lg border border-white/10 ${cinemaMode ? 'bg-emerald-500 text-white' : 'bg-white/10 backdrop-blur-md text-white hover:bg-white hover:text-black'}`}
+                        title="Cinema Mode"
+                    >
+                        <Monitor size={20} />
+                    </button>
+                )}
+                {pin.type !== 'video' && (
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); setIsTaggingMode(!isTaggingMode); }}
+                        className={`p-4 rounded-full text-white transition shadow-lg border border-white/10 ${isTaggingMode ? 'bg-emerald-500' : 'bg-white/10 backdrop-blur-md hover:bg-white hover:text-black'}`}
+                        title="Add Tag"
+                    >
+                        <Tag size={20} />
+                    </button>
+                )}
             </div>
         </div>
 
-        {/* Right Side: Details */}
+        {/* Right Side: Details - Hidden in Cinema Mode */}
+        {!cinemaMode && (
         <div className="w-full md:w-[40%] lg:w-[35%] h-full flex flex-col bg-white overflow-y-auto relative scrollbar-thin">
             
             <div className="sticky top-0 bg-white/95 backdrop-blur-xl z-30 p-6 flex justify-between items-center border-b border-gray-100">
@@ -198,7 +220,7 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
                     <button 
                         onClick={handleDownload}
                         className="p-3 hover:bg-gray-100 rounded-full text-gray-600 hover:text-black transition"
-                        title="Download Image"
+                        title="Download"
                     >
                         <Download size={24}/>
                     </button>
@@ -235,7 +257,7 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
                 </div>
 
                 {/* Comments */}
-                <div className="mb-24">
+                <div className="mb-12">
                     <h3 className="text-xl font-bold mb-6">{comments.length} Comments</h3>
                     <div className="space-y-6">
                         {comments.map((comment) => (
@@ -249,6 +271,24 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
                                         <button className="flex items-center gap-1 hover:text-red-500"><Heart size={10}/> Like</button>
                                     </div>
                                 </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Related Pins - Context Aware */}
+                <div className="mb-24">
+                    <h3 className="text-xl font-bold mb-6 text-center">More like this</h3>
+                    <div className="grid grid-cols-2 gap-2">
+                        {relatedPins.map(rp => (
+                            <div key={rp.id} className="relative rounded-xl overflow-hidden aspect-[2/3] bg-gray-100 cursor-pointer group">
+                                {rp.type === 'video' ? (
+                                    <video src={rp.videoUrl} className="w-full h-full object-cover" muted />
+                                ) : (
+                                    <img src={rp.imageUrl} className="w-full h-full object-cover" />
+                                )}
+                                {rp.type === 'video' && <div className="absolute top-2 right-2 bg-black/50 p-1 rounded-full"><Film size={12} className="text-white"/></div>}
+                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition"></div>
                             </div>
                         ))}
                     </div>
@@ -274,10 +314,11 @@ export const PinDetail: React.FC<PinDetailProps> = ({ pin, onClose, relatedPins,
                 </div>
             </div>
         </div>
+        )}
 
         {/* Share Sheet Modal */}
         {showShareSheet && (
-            <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="fixed inset-0 z-[220] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
                 <div className="bg-white rounded-3xl w-full max-w-md p-6 animate-in zoom-in-95 relative">
                     <button onClick={() => setShowShareSheet(false)} className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full"><X size={20}/></button>
                     <h3 className="text-center font-bold text-lg mb-8">Share this Pin</h3>

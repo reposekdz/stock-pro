@@ -68,21 +68,25 @@ const generateMockBoards = (userId: string): Board[] => [
     }
 ];
 
-const generateMockPins = (count: number, topicSeed?: string): Pin[] => {
-  return Array.from({ length: count }).map((_, i) => ({
-      id: `${Date.now()}-${i}`,
-      title: topicSeed || "Design Idea " + (i + 1),
-      description: "A curated pin.",
-      imageUrl: `https://picsum.photos/seed/${i + Date.now()}/600/${Math.floor(Math.random() * 400 + 400)}`, // Varying heights
-      type: Math.random() > 0.8 ? 'video' : 'image', // Add some video pins
-      width: 600,
-      height: Math.floor(Math.random() * 400 + 400),
-      tags: ['design'],
-      likes: Math.floor(Math.random() * 1000),
-      author: generateMockUser(),
-      // Mock video URL for video pins
-      videoUrl: 'https://cdn.pixabay.com/video/2024/02/09/199958-911694865_large.mp4' 
-  }));
+const generateMockPins = (count: number, topicSeed?: string, preferredType?: 'video' | 'image'): Pin[] => {
+  return Array.from({ length: count }).map((_, i) => {
+      // If preferred type is set, 80% chance to be that type
+      const isVideo = preferredType ? (Math.random() > 0.2 ? (preferredType === 'video') : (Math.random() > 0.8)) : (Math.random() > 0.8);
+      
+      return {
+        id: `${Date.now()}-${i}`,
+        title: topicSeed || "Design Idea " + (i + 1),
+        description: "A curated pin.",
+        imageUrl: `https://picsum.photos/seed/${i + Date.now()}/600/${Math.floor(Math.random() * 400 + 400)}`, // Varying heights
+        type: isVideo ? 'video' : 'image', 
+        width: 600,
+        height: Math.floor(Math.random() * 400 + 400),
+        tags: ['design'],
+        likes: Math.floor(Math.random() * 1000),
+        author: generateMockUser(),
+        videoUrl: 'https://cdn.pixabay.com/video/2024/02/09/199958-911694865_large.mp4' 
+      };
+  });
 };
 
 const generateMockStories = (count: number): Story[] => {
@@ -234,8 +238,8 @@ const App: React.FC = () => {
           case ViewState.HOME:
               return (
                   <div>
-                      {/* Sticky Topic & Filter Bar */}
-                      <div className="sticky top-[88px] bg-white/95 backdrop-blur-md z-40 py-2 mb-2 border-b border-gray-100 flex items-center justify-between gap-4 px-4 shadow-sm transition-all group/topics">
+                      {/* Sticky Topic & Filter Bar - Positioned below fixed header */}
+                      <div className="sticky top-[80px] bg-white/95 backdrop-blur-md z-40 py-2 mb-2 border-b border-gray-100 flex items-center justify-between gap-4 px-4 shadow-sm transition-all group/topics">
                            {/* Left Nav Button */}
                            <button 
                                 onClick={() => scrollContainer(topicsRef, 'left')}
@@ -454,7 +458,7 @@ const App: React.FC = () => {
           />
       </div>
 
-      <main className="max-w-[1920px] mx-auto pt-0 relative">
+      <main className="max-w-[1920px] mx-auto pt-0 relative z-0">
           {renderContent()}
       </main>
 
@@ -462,7 +466,7 @@ const App: React.FC = () => {
         <PinDetail 
           pin={selectedPin} 
           onClose={() => setSelectedPin(null)} 
-          relatedPins={generateMockPins(10)} 
+          relatedPins={generateMockPins(10, selectedPin.title, selectedPin.type === 'video' ? 'video' : 'image')} 
           boards={boards} 
           onTagClick={() => {}} 
         />
