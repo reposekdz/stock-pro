@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Bell, MessageCircle, User as UserIcon, X, Camera, ArrowLeft, ArrowRight, Eye, Sparkles, Settings, Heart, UserPlus, Plus, TrendingUp, History, LogIn, ChevronLeft } from 'lucide-react';
-import { Notification } from '../types';
+import { Search, Bell, MessageCircle, User as UserIcon, X, Camera, ArrowLeft, ArrowRight, Eye, Sparkles, Settings, Heart, UserPlus, Plus, TrendingUp, History, LogIn, ChevronLeft, PlayCircle, Home } from 'lucide-react';
+import { Notification, ViewState } from '../types';
 
 interface HeaderProps {
   onSearch: (query: string) => void;
@@ -18,6 +18,8 @@ interface HeaderProps {
   onCreateClick: () => void;
   isLoggedIn: boolean;
   onLoginClick: () => void;
+  currentView: ViewState;
+  onWatchClick: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
@@ -34,17 +36,18 @@ export const Header: React.FC<HeaderProps> = ({
     onForward,
     onCreateClick,
     isLoggedIn,
-    onLoginClick
+    onLoginClick,
+    currentView,
+    onWatchClick
 }) => {
   const [searchValue, setSearchValue] = useState(currentQuery || '');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
-  const [zenMode, setZenMode] = useState(false); // Innovation: Focus Mode
+  const [zenMode, setZenMode] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Load history from local storage (mock)
     const stored = localStorage.getItem('nexos_search_history');
     if (stored) setSearchHistory(JSON.parse(stored));
     else setSearchHistory(['Modern Art', 'Interior Design', 'Cyberpunk City', 'Minimalist UI']);
@@ -58,7 +61,6 @@ export const Header: React.FC<HeaderProps> = ({
       onSearch(query);
       setShowSuggestions(false);
       setIsMobileSearchOpen(false);
-      // Update history
       const newHistory = [query, ...searchHistory.filter(h => h !== query)].slice(0, 5);
       setSearchHistory(newHistory);
       localStorage.setItem('nexos_search_history', JSON.stringify(newHistory));
@@ -79,9 +81,8 @@ export const Header: React.FC<HeaderProps> = ({
       <div className={`max-w-[1920px] mx-auto bg-white/80 backdrop-blur-2xl rounded-full px-3 py-3 shadow-[0_8px_32px_rgba(0,0,0,0.08)] border border-white/50 flex items-center justify-between gap-4 relative transition-all duration-300 ${zenMode ? 'opacity-20 hover:opacity-100' : 'opacity-100'}`}>
         
         {/* Left Side: Logo & Nav */}
-        <div className={`flex items-center gap-4 pl-1 ${isMobileSearchOpen ? 'hidden md:flex' : 'flex'}`}>
+        <div className={`flex items-center gap-2 pl-1 ${isMobileSearchOpen ? 'hidden md:flex' : 'flex'}`}>
            <button onClick={onHomeClick} className="w-12 h-12 rounded-2xl flex items-center justify-center hover:scale-105 transition shadow-lg shadow-emerald-200/50 bg-white border border-emerald-100 overflow-hidden group">
-               {/* Nexos N Logo */}
                <svg viewBox="0 0 100 100" className="w-8 h-8" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <defs>
                     <linearGradient id="nexosGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -89,7 +90,6 @@ export const Header: React.FC<HeaderProps> = ({
                       <stop offset="100%" stopColor="#0d9488" />
                     </linearGradient>
                   </defs>
-                  {/* N Shape with rounded terminals */}
                   <path 
                     d="M30 75V35C30 29.4772 34.4772 25 40 25H42C44.7614 25 47 27.2386 47 30V70C47 72.7614 49.2386 75 52 75H54C59.5228 75 64 70.5228 64 65V25" 
                     stroke="url(#nexosGradient)" 
@@ -101,14 +101,31 @@ export const Header: React.FC<HeaderProps> = ({
                   <circle cx="64" cy="45" r="3" fill="white" fillOpacity="0.5"/>
                </svg>
            </button>
-           <div className="hidden md:flex gap-2">
+           
+           {/* Navigation Links (Home / Watch) */}
+           <div className="hidden lg:flex items-center gap-1 ml-2">
+               <button 
+                  onClick={onHomeClick}
+                  className={`px-5 py-2.5 rounded-full font-bold text-sm transition flex items-center gap-2 ${currentView === 'HOME' ? 'bg-black text-white' : 'text-gray-900 hover:bg-gray-100'}`}
+               >
+                   <Home size={18} /> Home
+               </button>
+               <button 
+                  onClick={onWatchClick}
+                  className={`px-5 py-2.5 rounded-full font-bold text-sm transition flex items-center gap-2 ${currentView === 'WATCH' ? 'bg-black text-white' : 'text-gray-900 hover:bg-gray-100'}`}
+               >
+                   <PlayCircle size={18} /> Watch
+               </button>
+           </div>
+
+           <div className="hidden md:flex gap-2 ml-2 border-l border-gray-200 pl-4">
                <button onClick={onBack} disabled={!canGoBack} className="p-2.5 rounded-full bg-gray-100 disabled:opacity-50 hover:bg-gray-200 transition"><ArrowLeft size={18}/></button>
                <button onClick={onForward} disabled={!canGoForward} className="p-2.5 rounded-full bg-gray-100 disabled:opacity-50 hover:bg-gray-200 transition"><ArrowRight size={18}/></button>
            </div>
         </div>
 
         {/* Search Bar - Responsive */}
-        <div className={`flex-1 relative group max-w-3xl mx-auto ${isMobileSearchOpen ? 'flex' : 'hidden md:block'}`} ref={searchRef}>
+        <div className={`flex-1 relative group max-w-2xl mx-auto ${isMobileSearchOpen ? 'flex' : 'hidden md:block'}`} ref={searchRef}>
              {isMobileSearchOpen && (
                  <button onClick={() => setIsMobileSearchOpen(false)} className="md:hidden p-3 mr-2 bg-gray-100 rounded-full">
                      <ChevronLeft size={20}/>
@@ -129,9 +146,9 @@ export const Header: React.FC<HeaderProps> = ({
                     autoFocus={isMobileSearchOpen}
                  />
                  {searchValue && <button onClick={() => setSearchValue('')} className="p-1 hover:bg-gray-200 rounded-full"><X size={16}/></button>}
+                 <button onClick={() => {}} className="p-2 hover:bg-gray-200 rounded-full text-gray-400"><Camera size={20}/></button>
             </div>
 
-            {/* Dropdown */}
             {showSuggestions && (
                 <div className="absolute top-full left-0 right-0 bg-white rounded-b-[24px] shadow-xl border-x border-b border-gray-100 overflow-hidden py-2 animate-in slide-in-from-top-2 z-50">
                     {searchHistory.length > 0 && (
@@ -148,7 +165,7 @@ export const Header: React.FC<HeaderProps> = ({
                                         <span className="font-bold text-gray-700 group-hover/item:text-black">{term}</span>
                                     </div>
                                     <button 
-                                        onClick={(e) => { e.stopPropagation(); /* Remove item logic */ }} 
+                                        onClick={(e) => { e.stopPropagation(); }} 
                                         className="text-gray-300 hover:text-red-500"
                                     >
                                         <X size={14} />
@@ -163,23 +180,12 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Right Side Actions */}
         <div className={`flex items-center gap-2 md:gap-3 ${isMobileSearchOpen ? 'hidden' : 'flex'}`}>
-            {/* Mobile Search Trigger */}
             <button onClick={() => setIsMobileSearchOpen(true)} className="md:hidden p-3 bg-gray-100 rounded-full hover:bg-gray-200 transition text-gray-700">
                 <Search size={22} />
             </button>
 
-            {/* Innovation: Zen Mode Toggle */}
             <button 
-                onClick={() => setZenMode(!zenMode)} 
-                className={`hidden md:flex p-3 rounded-full transition ${zenMode ? 'bg-black text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-                title="Zen Mode (Focus)"
-            >
-                <Eye size={22} />
-            </button>
-
-            {/* Always show Message & Notification icons (interactive) */}
-            <button 
-                onClick={isLoggedIn ? () => {/* notifications */} : handleGuestInteraction} 
+                onClick={isLoggedIn ? () => {} : handleGuestInteraction} 
                 className="p-3 bg-gray-100 rounded-full hover:bg-gray-200 transition text-gray-700 relative group"
                 title="Notifications"
             >
@@ -206,6 +212,7 @@ export const Header: React.FC<HeaderProps> = ({
                     <button onClick={onProfileClick} className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden hover:opacity-80 transition border border-gray-100 shadow-sm hover:ring-2 ring-emerald-500">
                         <img src="https://picsum.photos/seed/userPro/100/100" className="w-full h-full object-cover" />
                     </button>
+                    <button onClick={() => {}} className="hidden md:flex p-3 hover:bg-gray-100 rounded-full text-gray-500"><Settings size={20}/></button>
                 </>
             ) : (
                 <button 
