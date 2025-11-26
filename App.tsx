@@ -13,6 +13,7 @@ import { CreateBoardModal } from './components/CreateBoardModal';
 import { UserListModal } from './components/UserListModal';
 import { Messages } from './components/Messages';
 import { BusinessHub } from './components/BusinessHub';
+import { AdCreateModal } from './components/AdCreateModal';
 import { AuthModal } from './components/AuthModal';
 import { Onboarding } from './components/Onboarding';
 import { VisualSearchModal } from './components/VisualSearchModal';
@@ -151,6 +152,7 @@ const App: React.FC = () => {
       userList: [] 
   });
   const [showBusinessHub, setShowBusinessHub] = useState(false);
+  const [showAdCreateModal, setShowAdCreateModal] = useState(false);
 
   // Visual Search State
   const [visualSearchPin, setVisualSearchPin] = useState<Pin | null>(null);
@@ -404,8 +406,8 @@ const App: React.FC = () => {
                           </div>
                       )}
 
-                      {/* Main Grid - Reduced padding on mobile (px-2) to make images larger */}
-                      <div className="masonry-grid pb-32 px-2 md:px-4 transition-all duration-300">
+                      {/* Main Grid - Reduced padding on mobile (px-1) to make images larger */}
+                      <div className="masonry-grid pb-32 px-1 md:px-4 transition-all duration-300">
                           {getFilteredPins().map(pin => (
                               <PinCard 
                                 key={pin.id} 
@@ -575,6 +577,14 @@ const App: React.FC = () => {
           <BusinessHub 
               onClose={() => setShowBusinessHub(false)} 
               recentPins={generateMockPins(5)} 
+              onCreateAd={() => setShowAdCreateModal(true)}
+          />
+      )}
+      
+      {showAdCreateModal && (
+          <AdCreateModal 
+              onClose={() => setShowAdCreateModal(false)}
+              userPins={homePins.slice(0, 6)}
           />
       )}
 

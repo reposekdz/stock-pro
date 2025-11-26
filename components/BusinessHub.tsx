@@ -6,9 +6,10 @@ import { Pin } from '../types';
 interface BusinessHubProps {
     onClose: () => void;
     recentPins: Pin[];
+    onCreateAd?: () => void;
 }
 
-export const BusinessHub: React.FC<BusinessHubProps> = ({ onClose, recentPins }) => {
+export const BusinessHub: React.FC<BusinessHubProps> = ({ onClose, recentPins, onCreateAd }) => {
     const [timeRange, setTimeRange] = useState('30d');
     
     // Mock Data mimicking Pinterest Business Hub
@@ -166,7 +167,10 @@ export const BusinessHub: React.FC<BusinessHubProps> = ({ onClose, recentPins })
 
                     {/* Creation & Tools */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                         <div className="bg-black text-white p-8 rounded-3xl relative overflow-hidden group cursor-pointer">
+                         <div 
+                             className="bg-black text-white p-8 rounded-3xl relative overflow-hidden group cursor-pointer"
+                             onClick={onCreateAd}
+                         >
                              <div className="relative z-10">
                                  <h3 className="text-2xl font-black mb-2">Create an Ad</h3>
                                  <p className="text-gray-300 mb-6 max-w-xs">Reach more people and drive sales with Promoted Pins.</p>

@@ -218,7 +218,7 @@ export const PinCard: React.FC<PinCardProps> = ({
   return (
     <div 
       ref={cardRef}
-      className={`relative mb-4 md:mb-6 break-inside-avoid rounded-[16px] cursor-zoom-in group z-0 transition-all duration-300 ease-out ${isSelectMode ? 'cursor-default' : ''} ${isSelected ? 'scale-95' : ''}`}
+      className={`relative mb-2 md:mb-6 break-inside-avoid rounded-[16px] cursor-zoom-in group z-0 transition-all duration-300 ease-out ${isSelectMode ? 'cursor-default' : ''} ${isSelected ? 'scale-95' : ''}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onMouseMove={handleMouseMove}
