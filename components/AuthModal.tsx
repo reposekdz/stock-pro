@@ -95,6 +95,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onLogin, onClose }) => {
                     
                     <div className="relative z-10">
                          <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mb-6 shadow-xl shadow-emerald-900/30 overflow-hidden">
+                             {/* Nexos Logo */}
                              <svg viewBox="0 0 100 100" className="w-10 h-10" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <defs>
                                     <linearGradient id="nexosGradientAuth" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -102,10 +103,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onLogin, onClose }) => {
                                     <stop offset="100%" stopColor="#0d9488" />
                                     </linearGradient>
                                 </defs>
-                                <path d="M25 75V25C25 22.2386 27.2386 20 30 20H35L65 80H70C72.7614 80 75 77.7614 75 75V25" stroke="url(#nexosGradientAuth)" strokeWidth="10" strokeLinecap="round" strokeLinejoin="round"/>
-                                <circle cx="25" cy="50" r="4" fill="white" stroke="url(#nexosGradientAuth)" strokeWidth="3"/>
-                                <circle cx="50" cy="50" r="4" fill="white" stroke="url(#nexosGradientAuth)" strokeWidth="3"/>
-                                <circle cx="75" cy="50" r="4" fill="white" stroke="url(#nexosGradientAuth)" strokeWidth="3"/>
+                                <path 
+                                    d="M30 75V35C30 29.4772 34.4772 25 40 25H42C44.7614 25 47 27.2386 47 30V70C47 72.7614 49.2386 75 52 75H54C59.5228 75 64 70.5228 64 65V25" 
+                                    stroke="url(#nexosGradientAuth)" 
+                                    strokeWidth="12" 
+                                    strokeLinecap="round" 
+                                    strokeLinejoin="round"
+                                />
+                                <circle cx="30" cy="55" r="3" fill="white" fillOpacity="0.5"/>
+                                <circle cx="64" cy="45" r="3" fill="white" fillOpacity="0.5"/>
                              </svg>
                          </div>
                          <h1 className="text-4xl font-black tracking-tight mb-2">Welcome to Nexos.</h1>

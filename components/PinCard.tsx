@@ -1,7 +1,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Share2, MoreHorizontal, ChevronDown, Check, ScanSearch, Heart, RotateCcw, Play, Layers, Edit2, Circle, Download, Zap } from 'lucide-react';
+import { Share2, MoreHorizontal, ChevronDown, Check, ScanSearch, Heart, RotateCcw, Play, Layers, Edit2, Circle, Download, Zap, EyeOff, Flag, Link as LinkIcon, AlertTriangle } from 'lucide-react';
 import { Pin, Board, User } from '../types';
+import confetti from 'canvas-confetti';
 
 interface PinCardProps {
   pin: Pin;
@@ -37,6 +38,11 @@ export const PinCard: React.FC<PinCardProps> = ({
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [tilt, setTilt] = useState({ x: 0, y: 0 }); // 3D Tilt State
   
+  // Interaction States
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(pin.likes);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  
   // Dominant Color Placeholder
   const [bgColor] = useState(() => {
       const colors = ['#f3f4f6', '#e5e7eb', '#d1d5db', '#fca5a5', '#fdba74', '#fde047', '#bef264', '#6ee7b7', '#93c5fd', '#c4b5fd', '#f0abfc'];
@@ -57,14 +63,11 @@ export const PinCard: React.FC<PinCardProps> = ({
               const playPromise = videoRef.current.play();
               if (playPromise !== undefined) {
                   playPromise.catch(error => {
-                      // Auto-play was prevented (browser policy or user interaction)
-                      // console.log("Autoplay prevented");
+                      // Auto-play was prevented
                   });
               }
           } else {
               videoRef.current.pause();
-              // Optional: reset to start
-              // videoRef.current.currentTime = 0; 
           }
       }
   }, [isHovered, pin.type, isSelectMode]);
@@ -75,20 +78,50 @@ export const PinCard: React.FC<PinCardProps> = ({
     if (!isSaved) {
         onSave(pin, selectedBoard?.id);
         if (navigator.vibrate) navigator.vibrate(50);
+        confetti({
+            particleCount: 30,
+            spread: 50,
+            origin: { x: e.clientX / window.innerWidth, y: e.clientY / window.innerHeight }
+        });
     }
+  };
+
+  const handleLike = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      const newLikedState = !isLiked;
+      setIsLiked(newLikedState);
+      setLikeCount(prev => newLikedState ? prev + 1 : prev - 1);
+      
+      if (newLikedState) {
+          if (navigator.vibrate) navigator.vibrate(20);
+      }
   };
 
   const handleDownload = (e: React.MouseEvent) => {
       e.stopPropagation();
-      // Simulate Download
       const link = document.createElement('a');
       link.href = pin.imageUrl;
-      link.download = `stoc-${pin.id}.jpg`;
+      link.download = `nexos-${pin.id}.jpg`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       setShowMobileMenu(false);
+      setShowMoreMenu(false);
       if (navigator.vibrate) navigator.vibrate(50);
+  };
+
+  const handleShare = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (navigator.share) {
+          navigator.share({
+              title: pin.title,
+              text: pin.description,
+              url: window.location.href // Mock URL
+          });
+      } else {
+          // Fallback or just a visual feedback
+          alert('Link copied to clipboard!');
+      }
   };
 
   const handleTouchStart = () => {
@@ -125,6 +158,11 @@ export const PinCard: React.FC<PinCardProps> = ({
       }
   };
 
+  const toggleMoreMenu = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setShowMoreMenu(!showMoreMenu);
+  };
+
   // 3D Tilt Effect & Haptic Feedback
   const handleMouseMove = (e: React.MouseEvent) => {
       if (!cardRef.current || isSelectMode || window.innerWidth < 768) return;
@@ -152,6 +190,7 @@ export const PinCard: React.FC<PinCardProps> = ({
   const handleMouseLeave = () => {
       setIsHovered(false);
       setTilt({ x: 0, y: 0 });
+      setShowMoreMenu(false);
   };
 
   return (
@@ -269,40 +308,52 @@ export const PinCard: React.FC<PinCardProps> = ({
                                   <ScanSearch size={16} />
                               </button>
 
-                              {/* Download Button - Innovation */}
+                              {/* Download Button */}
                               <button 
                                   className="p-2.5 bg-white/90 backdrop-blur-sm rounded-full text-black hover:bg-white transition shadow-sm"
                                   onClick={handleDownload}
-                                  title="Download Image"
+                                  title="Download"
                               >
                                   <Download size={16} />
                               </button>
 
-                              {isCreator ? (
-                                  <button 
-                                      className="p-2.5 bg-white/90 backdrop-blur-sm rounded-full text-black hover:bg-white transition shadow-sm"
-                                      onClick={(e) => { e.stopPropagation(); /* Open Edit */ }}
-                                      title="Edit Pin"
-                                  >
-                                      <Edit2 size={16} />
-                                  </button>
-                              ) : (
-                                  <button 
-                                      className="p-2.5 bg-white/90 backdrop-blur-sm rounded-full text-black hover:bg-white transition shadow-sm"
-                                      onClick={(e) => { e.stopPropagation(); /* Open Share */ }}
-                                      title="Share"
-                                  >
-                                      <Share2 size={16} />
-                                  </button>
-                              )}
-                              
+                              {/* Share Button */}
                               <button 
                                   className="p-2.5 bg-white/90 backdrop-blur-sm rounded-full text-black hover:bg-white transition shadow-sm"
-                                  onClick={(e) => { e.stopPropagation(); }}
-                                  title="More"
+                                  onClick={handleShare}
+                                  title="Share"
                               >
-                                  <MoreHorizontal size={16} />
+                                  <Share2 size={16} />
                               </button>
+                              
+                              {/* More Button with Dropdown */}
+                              <div className="relative">
+                                  <button 
+                                      className={`p-2.5 bg-white/90 backdrop-blur-sm rounded-full text-black hover:bg-white transition shadow-sm ${showMoreMenu ? 'bg-white ring-2 ring-emerald-500' : ''}`}
+                                      onClick={toggleMoreMenu}
+                                      title="More"
+                                  >
+                                      <MoreHorizontal size={16} />
+                                  </button>
+                                  
+                                  {/* More Dropdown Menu */}
+                                  {showMoreMenu && (
+                                      <div 
+                                        className="absolute bottom-full right-0 mb-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-bottom-2 z-50 py-1"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                          <button onClick={() => alert('Pin hidden')} className="w-full text-left px-4 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                                              <EyeOff size={16}/> Hide Pin
+                                          </button>
+                                          <button onClick={() => alert('Reported')} className="w-full text-left px-4 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                                              <Flag size={16}/> Report Pin
+                                          </button>
+                                          <button onClick={() => alert('Embed code copied')} className="w-full text-left px-4 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                                              <LinkIcon size={16}/> Get Embed Code
+                                          </button>
+                                      </div>
+                                  )}
+                              </div>
                           </div>
                       </div>
                   </div>
@@ -314,7 +365,7 @@ export const PinCard: React.FC<PinCardProps> = ({
       {showMobileMenu && (
           <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-md rounded-[16px] flex flex-col items-center justify-center animate-in fade-in duration-200" onClick={(e) => { e.stopPropagation(); setShowMobileMenu(false); }}>
               <div className="flex gap-6 mb-6">
-                  {/* Like Button - Pink/Red Gradient */}
+                  {/* Like Button */}
                   <div className="flex flex-col items-center gap-2">
                       <button 
                         className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all duration-300 group
@@ -326,7 +377,7 @@ export const PinCard: React.FC<PinCardProps> = ({
                       <span className="text-white text-[10px] font-bold tracking-wide">Like</span>
                   </div>
 
-                  {/* Download Button - Blue/Cyan Gradient */}
+                  {/* Download Button */}
                   <div className="flex flex-col items-center gap-2">
                       <button 
                         className="w-14 h-14 rounded-full flex items-center justify-center text-white shadow-lg active:scale-90 transition-all duration-300 bg-gradient-to-tr from-sky-500 to-blue-600 shadow-blue-500/30" 
@@ -337,9 +388,12 @@ export const PinCard: React.FC<PinCardProps> = ({
                       <span className="text-white text-[10px] font-bold tracking-wide">Save</span>
                   </div>
 
-                  {/* Share Button - Purple Gradient */}
+                  {/* Share Button */}
                   <div className="flex flex-col items-center gap-2">
-                      <button className="w-14 h-14 rounded-full flex items-center justify-center text-white shadow-lg active:scale-90 transition-all duration-300 bg-gradient-to-tr from-violet-500 to-purple-600 shadow-purple-500/30">
+                      <button 
+                          className="w-14 h-14 rounded-full flex items-center justify-center text-white shadow-lg active:scale-90 transition-all duration-300 bg-gradient-to-tr from-violet-500 to-purple-600 shadow-purple-500/30"
+                          onClick={handleShare}
+                      >
                           <Share2 size={24} />
                       </button>
                       <span className="text-white text-[10px] font-bold tracking-wide">Share</span>
@@ -352,9 +406,20 @@ export const PinCard: React.FC<PinCardProps> = ({
       {/* Metadata - Only visible when not selecting */}
       {!isSelectMode && (
           <div className="mt-2 px-1">
-              {pin.title && (
-                <h4 className="text-sm font-bold text-gray-900 truncate leading-tight hover:underline cursor-pointer">{pin.title}</h4>
-              )}
+              <div className="flex justify-between items-start gap-2">
+                  {pin.title && (
+                    <h4 className="text-sm font-bold text-gray-900 truncate leading-tight hover:underline cursor-pointer flex-1" onClick={handleCardClick}>{pin.title}</h4>
+                  )}
+                  {/* Like Count Interaction */}
+                  <button 
+                      className={`flex items-center gap-1 text-xs font-bold transition-colors ${isLiked ? 'text-red-500' : 'text-gray-400 hover:text-gray-600'}`}
+                      onClick={handleLike}
+                  >
+                      <Heart size={12} fill={isLiked ? "currentColor" : "none"} />
+                      {likeCount > 0 && <span>{likeCount}</span>}
+                  </button>
+              </div>
+              
               <div className="flex items-center gap-2 mt-1 cursor-pointer group/author" onClick={handleAuthorClick}>
                    {pin.author.avatarUrl && (
                      <img src={pin.author.avatarUrl} className="w-6 h-6 rounded-full group-hover/author:opacity-80 transition object-cover" />
